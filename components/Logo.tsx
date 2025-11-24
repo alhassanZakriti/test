@@ -12,6 +12,7 @@ export default function Logo({ className = '', width = 237, height = 94 }: LogoP
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
+  
   return (
     <Link href="/" className={`flex items-center ${className}`}>
       <svg 
