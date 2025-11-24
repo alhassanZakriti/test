@@ -1,4 +1,3 @@
-'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Locale, defaultLocale, locales, isRTL } from '@/lib/i18n';

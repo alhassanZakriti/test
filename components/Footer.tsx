@@ -1,4 +1,4 @@
-'use client';
+
 
 import Logo from './Logo';
 import { useLanguage } from '@/contexts/LanguageContext';
