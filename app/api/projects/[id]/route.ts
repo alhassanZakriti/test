@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth'
-import { getProjectById, updateProject, deleteProject } from '@/lib/projects'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import prisma from '@/lib/prisma'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Niet geautoriseerd' },
         { status: 401 }
@@ -16,7 +17,20 @@ export async function GET(
     }
 
     const { id } = await params
-    const project = getProjectById(id)
+    const userId = (session.user as any).id
+    const isAdmin = (session.user as any).role === 'admin'
+
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    })
 
     if (!project) {
       return NextResponse.json(
@@ -25,7 +39,7 @@ export async function GET(
       )
     }
 
-    if (project.userId !== user.id) {
+    if (!isAdmin && project.userId !== userId) {
       return NextResponse.json(
         { error: 'Geen toegang tot dit project' },
         { status: 403 }
@@ -47,8 +61,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Niet geautoriseerd' },
         { status: 401 }
@@ -56,7 +70,12 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const project = getProjectById(id)
+    const userId = (session.user as any).id
+    const isAdmin = (session.user as any).role === 'admin'
+
+    const project = await prisma.project.findUnique({
+      where: { id },
+    })
 
     if (!project) {
       return NextResponse.json(
@@ -65,7 +84,7 @@ export async function PATCH(
       )
     }
 
-    if (project.userId !== user.id) {
+    if (!isAdmin && project.userId !== userId) {
       return NextResponse.json(
         { error: 'Geen toegang tot dit project' },
         { status: 403 }
@@ -73,7 +92,18 @@ export async function PATCH(
     }
 
     const updates = await request.json()
-    const updatedProject = updateProject(id, updates)
+    const updatedProject = await prisma.project.update({
+      where: { id },
+      data: updates,
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    })
 
     return NextResponse.json({
       project: updatedProject,
@@ -93,8 +123,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Niet geautoriseerd' },
         { status: 401 }
@@ -102,7 +132,12 @@ export async function DELETE(
     }
 
     const { id } = await params
-    const project = getProjectById(id)
+    const userId = (session.user as any).id
+    const isAdmin = (session.user as any).role === 'admin'
+
+    const project = await prisma.project.findUnique({
+      where: { id },
+    })
 
     if (!project) {
       return NextResponse.json(
@@ -111,14 +146,16 @@ export async function DELETE(
       )
     }
 
-    if (project.userId !== user.id) {
+    if (!isAdmin && project.userId !== userId) {
       return NextResponse.json(
         { error: 'Geen toegang tot dit project' },
         { status: 403 }
       )
     }
 
-    deleteProject(id)
+    await prisma.project.delete({
+      where: { id },
+    })
 
     return NextResponse.json({
       message: 'Project succesvol verwijderd',

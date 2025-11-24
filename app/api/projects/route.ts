@@ -49,17 +49,27 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, description, textInput, photoUrls, voiceMemoUrl } = body;
+    const { title, phoneNumber, description, textInput, logoUrl, photoUrls, voiceMemoUrl } = body;
 
     const userId = (session.user as any).id;
+
+    // Validate required fields
+    if (!phoneNumber) {
+      return NextResponse.json(
+        { error: 'Telefoonnummer is verplicht' },
+        { status: 400 }
+      );
+    }
 
     const project = await prisma.project.create({
       data: {
         userId,
         title: title || 'Nieuw Project',
+        phoneNumber,
         description,
         textInput,
-        photoUrls: photoUrls || [],
+        logoUrl,
+        photoUrls: JSON.stringify(photoUrls || []),
         voiceMemoUrl,
         status: 'Nieuw',
       },
