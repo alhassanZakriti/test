@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
-import { getCurrentUser } from '@/lib/auth'
-import { getProjectById, addFileToProject } from '@/lib/projects'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import prisma from '@/lib/prisma'
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Niet geautoriseerd' },
         { status: 401 }
@@ -18,7 +19,7 @@ export async function POST(
     }
 
     const { id } = await params
-    const project = getProjectById(id)
+    const project = await prisma.project.findUnique({ where: { id } })
 
     if (!project) {
       return NextResponse.json(
@@ -27,7 +28,7 @@ export async function POST(
       )
     }
 
-    if (project.userId !== user.id) {
+    if (project.userId !== (session.user as any).id) {
       return NextResponse.json(
         { error: 'Geen toegang tot dit project' },
         { status: 403 }
@@ -55,19 +56,14 @@ export async function POST(
     const filepath = join(uploadsDir, filename)
     await writeFile(filepath, buffer)
 
-    // Add file to project
-    const projectFile = {
-      id: Date.now().toString(),
-      name: file.name,
-      type: file.type,
-      url: `/uploads/${id}/${filename}`,
-      uploadedAt: new Date().toISOString(),
-    }
-
-    addFileToProject(id, projectFile)
+    const fileUrl = `/uploads/${id}/${filename}`
 
     return NextResponse.json({
-      file: projectFile,
+      file: {
+        name: file.name,
+        type: file.type,
+        url: fileUrl,
+      },
       message: 'Bestand succesvol geüpload',
     })
   } catch (error) {

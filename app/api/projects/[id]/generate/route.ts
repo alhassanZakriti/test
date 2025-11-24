@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { getCurrentUser } from '@/lib/auth'
-import { getProjectById, updateProject } from '@/lib/projects'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import prisma from '@/lib/prisma'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
@@ -12,8 +13,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Niet geautoriseerd' },
         { status: 401 }
@@ -21,7 +22,7 @@ export async function POST(
     }
 
     const { id } = await params
-    const project = getProjectById(id)
+    const project = await prisma.project.findUnique({ where: { id } })
 
     if (!project) {
       return NextResponse.json(
@@ -30,7 +31,7 @@ export async function POST(
       )
     }
 
-    if (project.userId !== user.id) {
+    if (project.userId !== (session.user as any).id) {
       return NextResponse.json(
         { error: 'Geen toegang tot dit project' },
         { status: 403 }
@@ -38,23 +39,22 @@ export async function POST(
     }
 
     // Update project status
-    updateProject(id, { status: 'processing' })
+    await prisma.project.update({
+      where: { id },
+      data: { status: 'processing' }
+    })
 
     // Generate website using OpenAI
     const prompt = `
 Je bent een professionele webdesigner. Maak een moderne, responsive HTML website op basis van de volgende informatie:
 
-Project Naam: ${project.name}
-Beschrijving: ${project.description}
-Aantal bestanden: ${project.files.length}
-Bestandstypen: ${project.files.map(f => f.type).join(', ')}
-
+Project Naam: ${project.title || 'Mijn Project'}
+Beschrijving: ${project.description || 'Een modern project'}
 Genereer een complete HTML pagina met:
 - Moderne, schone CSS styling (embedded in <style> tag)
 - Responsive design
 - Nederlandse tekst
 - Professionele uitstraling
-- Gebruik van de geüploade bestanden (referentie naar ${project.files.map(f => f.url).join(', ')})
 
 Geef alleen de volledige HTML code terug, zonder uitleg.
 `
@@ -79,9 +79,12 @@ Geef alleen de volledige HTML code terug, zonder uitleg.
       const generatedHTML = completion.choices[0]?.message?.content || ''
 
       // Update project with generated website
-      const updatedProject = updateProject(id, {
-        status: 'completed',
-        generatedWebsite: generatedHTML,
+      const updatedProject = await prisma.project.update({
+        where: { id },
+        data: {
+          status: 'completed',
+          generatedWebsite: generatedHTML,
+        }
       })
 
       return NextResponse.json({
@@ -94,9 +97,12 @@ Geef alleen de volledige HTML code terug, zonder uitleg.
       // Fallback: generate a simple template
       const fallbackHTML = generateFallbackTemplate(project)
       
-      const updatedProject = updateProject(id, {
-        status: 'completed',
-        generatedWebsite: fallbackHTML,
+      const updatedProject = await prisma.project.update({
+        where: { id },
+        data: {
+          status: 'completed',
+          generatedWebsite: fallbackHTML,
+        }
       })
 
       return NextResponse.json({
@@ -120,7 +126,7 @@ function generateFallbackTemplate(project: any): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${project.name}</title>
+    <title>${project.title || 'Mijn Project'}</title>
     <style>
         * {
             margin: 0;
@@ -177,8 +183,8 @@ function generateFallbackTemplate(project: any): string {
 </head>
 <body>
     <header>
-        <h1>${project.name}</h1>
-        <p>${project.description}</p>
+        <h1>${project.title || 'Mijn Project'}</h1>
+        <p>${project.description || 'Een modern project'}</p>
     </header>
     
     <div class="container">
@@ -186,23 +192,10 @@ function generateFallbackTemplate(project: any): string {
             <h2>Welkom</h2>
             <p>Dit is jouw nieuwe website, gegenereerd door Modual. Je kunt deze pagina naar wens aanpassen en uitbreiden.</p>
         </div>
-        
-        ${project.files.length > 0 ? `
-        <div class="content">
-            <h2>Galerij</h2>
-            <div class="gallery">
-                ${project.files.map((file: any) => 
-                  file.type.startsWith('image/') 
-                    ? `<img src="${file.url}" alt="${file.name}" />`
-                    : ''
-                ).join('')}
-            </div>
-        </div>
-        ` : ''}
     </div>
     
     <footer>
-        <p>&copy; 2025 ${project.name}. Gemaakt met Modual.</p>
+        <p>&copy; 2025 ${project.title || 'Mijn Project'}. Gemaakt met Modual.</p>
     </footer>
 </body>
 </html>
