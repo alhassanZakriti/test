@@ -1,3 +1,5 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -5,8 +7,15 @@ const nextConfig = {
     domains: ['lh3.googleusercontent.com', 'platform-lookaside.fbsbx.com', 'uploadthing.com', 'utfs.io'],
     dangerouslyAllowSVG: true,
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.fallback = { fs: false, net: false, tls: false };
+    
+    // Explicitly set module resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+    };
+    
     return config;
   },
   async headers() {
