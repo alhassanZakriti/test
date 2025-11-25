@@ -73,19 +73,31 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-gray-700 dark:text-gray-300"
-          >
-            {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-          </button>
+          {/* Mobile Navigation - Profile Icon or Menu */}
+          <div className="md:hidden flex items-center space-x-3">
+            <ThemeSwitcher />
+            {session ? (
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 rounded-full bg-gradient-modual text-white hover:opacity-90 transition-opacity"
+              >
+                <FiUser size={20} />
+              </button>
+            ) : (
+              <Link
+                href="/auth/inloggen"
+                className="p-2 rounded-full bg-gradient-modual text-white hover:opacity-90 transition-opacity"
+              >
+                <FiUser size={20} />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation - Profile Menu (Only for logged in users) */}
       <AnimatePresence>
-        {isMenuOpen && (
+        {isMenuOpen && session && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -93,63 +105,44 @@ export default function Navbar() {
             className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-800"
           >
             <div className="px-4 py-4 space-y-3">
-              <div className="mb-3 flex items-center space-x-3">
-                <ThemeSwitcher />
-                <LanguageSwitcher />
+              <div className="mb-3 pb-3 border-b dark:border-gray-700">
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('nav.signedInAs') || 'Signed in as'}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{session.user?.email}</p>
               </div>
-              {session ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {t('nav.dashboard')}
-                  </Link>
-                  <Link
-                    href="/dashboard/nieuw-project"
-                    className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {t('nav.newProject')}
-                  </Link>
-                  {(session.user as any)?.role === 'admin' && (
-                    <Link
-                      href="/admin"
-                      className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {t('nav.admin')}
-                    </Link>
-                  )}
-                  <button
-                    onClick={() => {
-                      signOut({ callbackUrl: '/' });
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full text-left bg-gradient-modual text-white px-4 py-2 rounded-lg"
-                  >
-                    {t('nav.logout')}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/inloggen"
-                    className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {t('nav.login')}
-                  </Link>
-                  <Link
-                    href="/auth/registreren"
-                    className="block bg-gradient-modual text-white px-4 py-2 rounded-lg text-center"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {t('nav.register')}
-                  </Link>
-                </>
+              <LanguageSwitcher />
+              <Link
+                href="/dashboard"
+                className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t('nav.dashboard')}
+              </Link>
+              <Link
+                href="/dashboard/nieuw-project"
+                className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t('nav.newProject')}
+              </Link>
+              {(session.user as any)?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t('nav.admin')}
+                </Link>
               )}
+              <button
+                onClick={() => {
+                  signOut({ callbackUrl: '/' });
+                  setIsMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-center space-x-2 bg-gradient-modual text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity mt-2"
+              >
+                <FiLogOut />
+                <span>{t('nav.logout')}</span>
+              </button>
             </div>
           </motion.div>
         )}
