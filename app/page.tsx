@@ -8,7 +8,8 @@ import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import Footer from '@/components/Footer';
-import { FiUser } from 'react-icons/fi';
+import { FiDatabase, FiUser } from 'react-icons/fi';
+import { FcBarChart } from 'react-icons/fc';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -26,9 +27,10 @@ export default function Home() {
             {session ? (
               <Link 
                 href="/dashboard" 
-                className="bg-gradient-modual text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                className="bg-gradient-modual text-white sm:px-6 px-3 py-2.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                {t('nav.dashboard')}
+                <span className='hidden sm:block'>{t('nav.dashboard')}</span>
+                <FcBarChart className='sm:hidden block'/>
               </Link>
             ) : (
               <>
@@ -48,7 +50,7 @@ export default function Home() {
                   href="/auth/registreren" 
                   className=" bg-gradient-modual text-white px-3 py-3 rounded-[100%] font-medium hover:opacity-90 transition-all transform hover:scale-105 md:hidden block"
                 >
-                  <FiUser />  
+                  <FiUser />
                 </Link>
               </>
             )}
