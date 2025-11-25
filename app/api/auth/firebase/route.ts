@@ -20,12 +20,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       // Create new user from Firebase data
+      const hashedPassword = await bcrypt.hash(uid, 10);
       user = await prisma.user.create({
         data: {
           email,
           name: displayName || email.split('@')[0],
-          password: await bcrypt.hash(uid, 10), // Hash Firebase UID as password
-          role: 'USER',
+          password: hashedPassword, // Hash Firebase UID as password
+          image: photoURL || null,
+          role: 'user',
+          emailVerified: new Date(),
         },
       });
 
