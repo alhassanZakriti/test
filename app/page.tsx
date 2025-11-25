@@ -8,6 +8,7 @@ import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import Footer from '@/components/Footer';
+import { FiUser } from 'react-icons/fi';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -33,15 +34,21 @@ export default function Home() {
               <>
                 <Link 
                   href="/auth/inloggen" 
-                  className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink font-medium transition-colors"
+                  className="md:block hidden text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink font-medium transition-colors"
                 >
                   {t('nav.login')}
                 </Link>
                 <Link 
                   href="/auth/registreren" 
-                  className="bg-gradient-modual text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all transform hover:scale-105"
+                  className="hidden md:block bg-gradient-modual text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all transform hover:scale-105"
                 >
                   {t('nav.getStarted')}
+                </Link>
+                <Link 
+                  href="/auth/registreren" 
+                  className=" bg-gradient-modual text-white px-3 py-3 rounded-[100%] font-medium hover:opacity-90 transition-all transform hover:scale-105 md:hidden block"
+                >
+                  <FiUser />  
                 </Link>
               </>
             )}

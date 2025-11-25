@@ -18,7 +18,7 @@ export default function LanguageSwitcher() {
         aria-label="Change language"
       >
         <FiGlobe className="text-gray-700 dark:text-gray-300" size={20} />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span className="text-sm md:flex hidden font-medium text-gray-700 dark:text-gray-300">
           {localeFlags[locale]} {localeNames[locale]}
         </span>
       </button>
