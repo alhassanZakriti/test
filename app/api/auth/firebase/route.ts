@@ -4,9 +4,13 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { uid, email, displayName, photoURL } = await request.json();
+    const body = await request.json();
+    console.log('🔵 Firebase auth request:', { uid: body.uid, email: body.email, displayName: body.displayName });
+    
+    const { uid, email, displayName, photoURL } = body;
 
     if (!uid || !email) {
+      console.error('❌ Missing required fields:', { uid: !!uid, email: !!email });
       return NextResponse.json(
         { error: 'UID and email are required' },
         { status: 400 }
@@ -18,9 +22,12 @@ export async function POST(request: NextRequest) {
       where: { email },
     });
 
+    // Hash the Firebase UID to use as password
+    const hashedPassword = await bcrypt.hash(uid, 10);
+
     if (!user) {
       // Create new user from Firebase data
-      const hashedPassword = await bcrypt.hash(uid, 10);
+      console.log('🟡 Creating new user from Firebase data...');
       user = await prisma.user.create({
         data: {
           email,
@@ -34,7 +41,17 @@ export async function POST(request: NextRequest) {
 
       console.log('✅ New user created from Google sign-in:', user.email);
     } else {
-      console.log('✅ Existing user signed in with Google:', user.email);
+      // Always update password to match current Firebase UID for Google users
+      console.log('🟡 Updating existing user password to Firebase UID...');
+      user = await prisma.user.update({
+        where: { email },
+        data: { 
+          password: hashedPassword,
+          image: photoURL || user.image,
+          emailVerified: new Date(),
+        },
+      });
+      console.log('✅ Existing user password updated for Google sign-in:', user.email);
     }
 
     return NextResponse.json({ 
@@ -46,10 +63,11 @@ export async function POST(request: NextRequest) {
         role: user.role,
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Firebase auth error:', error);
+    console.error('Error details:', error.message);
     return NextResponse.json(
-      { error: 'Authentication failed' },
+      { error: 'Authentication failed', details: error.message },
       { status: 500 }
     );
   }

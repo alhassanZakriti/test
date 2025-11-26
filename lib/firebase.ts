@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, Auth } from 'firebase/aut
 import { getAnalytics, Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCWha1sbZ1-zbTalGBQXWCvPOtQBmF1Fr8",
-  authDomain: "modual-web-app.firebaseapp.com",
-  projectId: "modual-web-app",
-  storageBucket: "modual-web-app.firebasestorage.app",
-  messagingSenderId: "606603016078",
-  appId: "1:606603016078:web:89412f34209425b14e96df",
-  measurementId: "G-30T415NF98"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCWha1sbZ1-zbTalGBQXWCvPOtQBmF1Fr8",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "modual-web-app.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "modual-web-app",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "modual-web-app.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "606603016078",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:606603016078:web:89412f34209425b14e96df",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-30T415NF98"
 };
 
 // Initialize Firebase
