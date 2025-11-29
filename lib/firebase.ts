@@ -42,10 +42,17 @@ googleProvider.setCustomParameters({
 // Helper function to sign in with Google
 export const signInWithGoogle = async () => {
   try {
+    // Log the auth domain for debugging
+    console.log('🔵 Firebase Auth Domain:', auth.app.options.authDomain);
+    console.log('🔵 Current Domain:', typeof window !== 'undefined' ? window.location.hostname : 'unknown');
+    
     const result = await signInWithPopup(auth, googleProvider);
+    console.log('✅ Google sign-in successful');
     return result.user;
   } catch (error: any) {
-    console.error('Error signing in with Google:', error);
+    console.error('❌ Error signing in with Google:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
     
     // Handle specific errors
     if (error.code === 'auth/popup-blocked') {
@@ -54,6 +61,10 @@ export const signInWithGoogle = async () => {
       throw new Error('Sign-in cancelled. Please try again.');
     } else if (error.code === 'auth/cancelled-popup-request') {
       throw new Error('Another popup is already open.');
+    } else if (error.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorized. Please contact support.');
+    } else if (error.code === 'auth/operation-not-allowed') {
+      throw new Error('Google sign-in is not enabled. Please contact support.');
     }
     
     throw error;

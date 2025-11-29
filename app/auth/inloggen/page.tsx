@@ -86,12 +86,22 @@ export default function LoginPage() {
       router.refresh();
     } catch (error: any) {
       console.error('Google sign-in error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
       if (error.message === 'Popup was blocked. Please allow popups for this site.') {
         setError(t('auth.popupBlocked') || error.message);
       } else if (error.message === 'Sign-in cancelled. Please try again.') {
         setError(t('auth.signInCancelled') || error.message);
+      } else if (error.message?.includes('unauthorized-domain')) {
+        setError('Domain not authorized. Please add this domain to Firebase authorized domains.');
+      } else if (error.message?.includes('operation-not-allowed')) {
+        setError('Google sign-in is not enabled in Firebase configuration.');
       } else {
-        setError(t('auth.googleSignInError') || 'Google sign-in failed. Please try again.');
+        setError(error.message || t('auth.googleSignInError') || 'Google sign-in failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
