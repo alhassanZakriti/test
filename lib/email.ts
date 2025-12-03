@@ -2,13 +2,11 @@ import nodemailer from 'nodemailer';
 
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
+  service: 'gmail', // Use Gmail service directly
+  auth: process.env.SMTP_USER && process.env.SMTP_PASSWORD ? {
+    user: process.env.SMTP_USER.trim(),
+    pass: process.env.SMTP_PASSWORD.trim(),
+  } : undefined,
 });
 
 export interface ProjectStatusEmailData {
