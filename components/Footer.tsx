@@ -41,9 +41,9 @@ export default function Footer() {
 
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('footer.contact')}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Email: info@modual.nl
-            </p>
+            <a href="mailto:info@modual.ma" className="text-sm text-gray-600 dark:text-gray-400">
+              Email: info@modual.ma
+            </a>
           </div>
         </div>
 
