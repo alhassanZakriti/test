@@ -169,6 +169,77 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* Pricing Preview Section */}
+          <div className="mt-32">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4 text-gray-800 dark:text-gray-100">
+                {t('pricing.sectionTitle')}
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300">
+                {t('pricing.sectionSubtitle')}
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Basic Plan */}
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('pricing.basicPlan')}</h3>
+                <div className="flex items-end gap-2 mb-4">
+                  <span className="text-4xl font-bold gradient-text">{t('pricing.basicPrice')}</span>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.basicDescription')}</p>
+                <Link
+                  href="/pricing"
+                  className="block w-full text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:border-modual-purple dark:hover:border-modual-pink hover:text-modual-purple dark:hover:text-modual-pink transition-all"
+                >
+                  {t('pricing.getStarted')}
+                </Link>
+              </div>
+
+              {/* Pro Plan */}
+              <div className="relative bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl ring-2 ring-modual-purple dark:ring-modual-pink transform scale-105">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gradient-modual text-white px-4 py-1 rounded-full text-sm font-semibold">
+                    {t('pricing.mostPopular')}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('pricing.proPlan')}</h3>
+                <div className="flex items-end gap-2 mb-4">
+                  <span className="text-4xl font-bold gradient-text">{t('pricing.proPrice')}</span>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.proDescription')}</p>
+                <Link
+                  href="/pricing"
+                  className="block w-full text-center bg-gradient-modual text-white py-3 rounded-lg font-semibold hover:opacity-90 transform hover:scale-105 transition-all"
+                >
+                  {t('pricing.getStarted')}
+                </Link>
+              </div>
+
+              {/* Enterprise Plan */}
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('pricing.enterprisePlan')}</h3>
+                <div className="flex items-end gap-2 mb-4">
+                  <span className="text-4xl font-bold gradient-text">{t('pricing.enterprisePrice')}</span>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.enterpriseDescription')}</p>
+                <Link
+                  href="/pricing"
+                  className="block w-full text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:border-modual-purple dark:hover:border-modual-pink hover:text-modual-purple dark:hover:text-modual-pink transition-all"
+                >
+                  {t('pricing.contactUs')}
+                </Link>
+              </div>
+            </div>
+            <div className="text-center mt-8">
+              <Link
+                href="/pricing"
+                className="inline-block text-modual-purple dark:text-modual-pink font-semibold hover:underline"
+              >
+                {t('pricing.title')} →
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
 

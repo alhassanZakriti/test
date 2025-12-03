@@ -23,6 +23,12 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
+            <Link
+              href="/pricing"
+              className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
+            >
+              {t('nav.pricing')}
+            </Link>
             <ThemeSwitcher />
             <LanguageSwitcher />
             {session ? (
@@ -98,6 +104,15 @@ export default function Navbar() {
                 <ThemeSwitcher />
                 <LanguageSwitcher />
               </div>
+
+              {/* Pricing Link */}
+              <Link
+                href="/pricing"
+                className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t('nav.pricing')}
+              </Link>
 
               {session ? (
                 <>
