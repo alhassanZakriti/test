@@ -47,9 +47,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  projects Project[]
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  subscriptions Subscription[] @relation("UserSubscriptions")
 }
 
 model VerificationToken {
@@ -77,5 +78,46 @@ model Project {
   updatedAt       DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id              String    @id @default(cuid())
+  userId          String
+  uniqueCode      String    @unique // MOD-XXXX format
+  status          String    @default("Not Paid") // "Not Paid", "Paid", "Expired"
+  paymentDate     DateTime?
+  expirationDate  DateTime?
+  lastReminder    DateTime?
+  plan            String    @default("Basic") // "Basic", "E-Commerce", "Extra Services"
+  price           Int       @default(150) // Price in MAD
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  payments        Payment[]
+
+  @@index([userId])
+  @@index([uniqueCode])
+  @@index([status])
+}
+
+model Payment {
+  id              String       @id @default(cuid())
+  subscriptionId  String
+  amount          Int          // Amount in MAD
+  transactionDate DateTime
+  bankReference   String?      // Bank transaction reference
+  description     String?      @db.Text // Transaction description from bank
+  senderName      String?
+  method          String       @default("Bank Transfer") // Payment method
+  verified        Boolean      @default(false) // Manually verified by admin
+  notificationSent Boolean     @default(false) // Email/WhatsApp sent
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([transactionDate])
 }
 
