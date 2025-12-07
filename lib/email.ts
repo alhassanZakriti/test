@@ -64,13 +64,63 @@ export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData)
   const lang = ['en', 'nl', 'fr', 'ar'].includes(preferredLanguage) ? preferredLanguage as 'en' | 'nl' | 'fr' | 'ar' : 'en';
   const message = statusInfo[lang];
 
+  // Email text translations
+  const emailText = {
+    en: {
+      greeting: 'Hello',
+      goodNews: 'Good news! Your project status has been updated.',
+      project: 'Project',
+      previousStatus: 'Previous status',
+      newStatus: 'New status',
+      viewDashboard: 'View Dashboard',
+      questions: 'Questions? Contact us:',
+      thanks: 'Thank you for choosing Modual!',
+      title: 'Project Status Update'
+    },
+    nl: {
+      greeting: 'Hallo',
+      goodNews: 'Goed nieuws! De status van uw project is bijgewerkt.',
+      project: 'Project',
+      previousStatus: 'Vorige status',
+      newStatus: 'Nieuwe status',
+      viewDashboard: 'Bekijk Dashboard',
+      questions: 'Vragen? Neem contact op:',
+      thanks: 'Bedankt voor het kiezen van Modual!',
+      title: 'Project Status Update'
+    },
+    fr: {
+      greeting: 'Bonjour',
+      goodNews: 'Bonne nouvelle! Le statut de votre projet a été mis à jour.',
+      project: 'Projet',
+      previousStatus: 'Statut précédent',
+      newStatus: 'Nouveau statut',
+      viewDashboard: 'Voir le Tableau de Bord',
+      questions: 'Questions? Contactez-nous:',
+      thanks: 'Merci d\'avoir choisi Modual!',
+      title: 'Mise à jour du statut du projet'
+    },
+    ar: {
+      greeting: 'مرحبا',
+      goodNews: 'أخبار جيدة! تم تحديث حالة مشروعك.',
+      project: 'المشروع',
+      previousStatus: 'الحالة السابقة',
+      newStatus: 'الحالة الجديدة',
+      viewDashboard: 'عرض لوحة التحكم',
+      questions: 'أسئلة؟ اتصل بنا:',
+      thanks: 'شكرا لاختيارك Modual!',
+      title: 'تحديث حالة المشروع'
+    }
+  };
+
+  const t = emailText[lang];
+
   const emailHtml = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project Status Update</title>
+  <title>${t.title}</title>
   <style>
     body {
       margin: 0;
@@ -174,51 +224,51 @@ export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData)
 <body>
   <div class="container">
     <div class="header">
-      <h1>${statusInfo.emoji} Project Status Update</h1>
+      <h1>${statusInfo.emoji} ${t.title}</h1>
     </div>
     
     <div class="content">
       <div class="greeting">
-        Hallo ${clientName},
+        ${t.greeting} ${clientName},
       </div>
       
       <p style="color: #666; line-height: 1.6;">
-        Goed nieuws! De status van uw project is bijgewerkt.
+        ${t.goodNews}
       </p>
       
       <div class="status-card">
         <div class="status-row">
-          <span class="label">Project:</span>
+          <span class="label">${t.project}:</span>
           <span class="value"><strong>${projectTitle}</strong></span>
         </div>
         <div class="status-row">
-          <span class="label">Vorige status:</span>
+          <span class="label">${t.previousStatus}:</span>
           <span class="value">${oldStatus}</span>
         </div>
         <div class="status-row">
-          <span class="label">Nieuwe status:</span>
+          <span class="label">${t.newStatus}:</span>
           <span class="value"><span class="new-status">${newStatus}</span></span>
         </div>
       </div>
       
       <div class="message">
-        ${statusInfo.nl}
+        ${message}
       </div>
       
       <div style="text-align: center;">
         <a href="${process.env.NEXTAUTH_URL || 'https://modual.ma'}/dashboard" class="button">
-          Bekijk Project Dashboard
+          ${t.viewDashboard}
         </a>
       </div>
       
       <p style="color: #666; font-size: 14px; margin-top: 30px;">
-        Als u vragen heeft, aarzel dan niet om contact met ons op te nemen.
+        ${t.questions} info@modual.ma
       </p>
     </div>
     
     <div class="footer">
       <p style="margin: 0 0 10px 0;">
-        <strong>Modual</strong> - Bouw uw droomwebsite
+        <strong>Modual</strong> - ${t.thanks}
       </p>
       <p style="margin: 0;">
         <a href="${process.env.NEXTAUTH_URL || 'https://modual.ma'}">modual.ma</a>
@@ -229,31 +279,11 @@ export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData)
 </html>
   `;
 
-  const emailText = `
-Hallo ${clientName},
-
-Goed nieuws! De status van uw project is bijgewerkt.
-
-Project: ${projectTitle}
-Vorige status: ${oldStatus}
-Nieuwe status: ${newStatus}
-
-${statusInfo.nl}
-
-Bekijk uw project dashboard: ${process.env.NEXTAUTH_URL || 'https://modual.ma'}/dashboard
-
-Als u vragen heeft, aarzel dan niet om contact met ons op te nemen.
-
-Met vriendelijke groet,
-Het Modual Team
-  `;
-
   try {
     const info = await transporter.sendMail({
       from: `"Modual" <${process.env.SMTP_USER}>`,
       to: clientEmail,
       subject: `${statusInfo.emoji} Project Status Update - ${projectTitle}`,
-      text: emailText,
       html: emailHtml,
     });
 
