@@ -44,7 +44,7 @@ model User {
   password      String?
   image         String?
   role          String    @default("user") // "user" or "admin"
-  paymentAlias  String?   @unique // MOD-XXXXXXXX format for payment tracking
+  paymentAlias  String?   @unique // MODXXXXXXXX format for payment tracking
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -84,7 +84,7 @@ model Project {
 model Subscription {
   id              String    @id @default(cuid())
   userId          String
-  uniqueCode      String    @unique // MOD-XXXX format
+  uniqueCode      String    @unique // MODXXXX format
   status          String    @default("Not Paid") // "Not Paid", "Paid", "Expired"
   paymentDate     DateTime?
   expirationDate  DateTime?

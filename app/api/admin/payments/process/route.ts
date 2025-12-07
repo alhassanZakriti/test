@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Extract code from description (look for MOD-XXXX pattern)
-        const codeMatch = description?.match(/MOD-\d{4}/i);
+        // Extract code from description (look for MODXXXXXXXX pattern)
+        const codeMatch = description?.match(/MOD\d{8}/i);
         if (!codeMatch) {
           results.unmatched++;
           results.details.push({

@@ -170,7 +170,7 @@ export default function AdminPaymentsPage() {
                 Date,Amount,Description,Sender Name
               </code>
               <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-                Example: 2025-12-04,150,Payment MOD-1234,John Doe
+                Example: 2025-12-04,150,Payment MOD00001234,John Doe
               </p>
             </div>
 
@@ -310,7 +310,7 @@ export default function AdminPaymentsPage() {
           <ol className="list-decimal list-inside space-y-2 text-sm text-purple-800 dark:text-purple-200">
             <li>Export transactions from CIH bank as CSV</li>
             <li>Upload the CSV file using the form above</li>
-            <li>System automatically matches MOD-XXXX codes with subscriptions</li>
+            <li>System automatically matches MODXXXXXXXX codes with subscriptions</li>
             <li>Verified payments update subscription status to &quot;Paid&quot;</li>
             <li>Clients receive automatic email + WhatsApp notifications</li>
             <li>View results and any unmatched transactions</li>

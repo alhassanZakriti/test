@@ -92,7 +92,7 @@ async function generateUniqueCode(): Promise<string> {
 
   while (!isUnique) {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    code = `MOD-${randomNum}`;
+    code = `MOD${randomNum}`;
 
     const existing = await prisma.subscription.findUnique({
       where: { uniqueCode: code },

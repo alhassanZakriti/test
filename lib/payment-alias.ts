@@ -1,7 +1,7 @@
 import prisma from './prisma';
 
 /**
- * Generate a unique payment alias in MOD-XXXXXXXX format
+ * Generate a unique payment alias in MODXXXXXXXX format
  * The XXXXXXXX is an 8-digit sequence number
  */
 export async function generatePaymentAlias(): Promise<string> {
