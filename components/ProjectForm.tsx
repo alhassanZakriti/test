@@ -149,7 +149,7 @@ export default function ProjectForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: formData.title || 'Nieuw Project',
+          title: formData.title || 'New Project',
           phoneNumber: formData.phoneNumber,
           textInput: formData.textInput,
           logoUrl: formData.logoUrl,

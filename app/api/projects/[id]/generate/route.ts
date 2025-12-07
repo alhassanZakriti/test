@@ -41,7 +41,7 @@ export async function POST(
     // Update project status
     await prisma.project.update({
       where: { id },
-      data: { status: 'In Behandeling' }
+      data: { status: 'In Progress' }
     })
 
     // Generate website using OpenAI
@@ -82,7 +82,7 @@ Geef alleen de volledige HTML code terug, zonder uitleg.
       const updatedProject = await prisma.project.update({
         where: { id },
         data: {
-          status: 'Voltooid',
+          status: 'Completed',
           aiPreview: generatedHTML,
         }
       })
@@ -100,7 +100,7 @@ Geef alleen de volledige HTML code terug, zonder uitleg.
       const updatedProject = await prisma.project.update({
         where: { id },
         data: {
-          status: 'Voltooid',
+          status: 'Completed',
           aiPreview: fallbackHTML,
         }
       })

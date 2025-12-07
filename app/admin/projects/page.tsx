@@ -99,9 +99,9 @@ export default function AdminProjectsPage() {
 
   const stats = {
     total: projects.length,
-    new: projects.filter(p => p.status === 'Nieuw').length,
-    inProgress: projects.filter(p => p.status === 'In Behandeling').length,
-    completed: projects.filter(p => p.status === 'Voltooid').length,
+    new: projects.filter(p => p.status === 'New').length,
+    inProgress: projects.filter(p => p.status === 'In Progress').length,
+    completed: projects.filter(p => p.status === 'Completed').length,
   };
 
   return (
@@ -220,9 +220,9 @@ export default function AdminProjectsPage() {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-modual-purple dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="all">{t('adminProjects.filterByStatus')}</option>
-              <option value="Nieuw">{t('common.new')}</option>
-              <option value="In Behandeling">{t('common.inProgress')}</option>
-              <option value="Voltooid">{t('common.completed')}</option>
+              <option value="New">{t('common.new')}</option>
+              <option value="In Progress">{t('common.inProgress')}</option>
+              <option value="Completed">{t('common.completed')}</option>
             </select>
           </div>
         </div>

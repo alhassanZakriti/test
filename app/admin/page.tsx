@@ -69,9 +69,9 @@ export default function AdminDashboard() {
 
   const stats = {
     total: projects.length,
-    new: projects.filter(p => p.status === 'Nieuw').length,
-    inProgress: projects.filter(p => p.status === 'In Behandeling').length,
-    completed: projects.filter(p => p.status === 'Voltooid').length,
+    new: projects.filter(p => p.status === 'New').length,
+    inProgress: projects.filter(p => p.status === 'In Progress').length,
+    completed: projects.filter(p => p.status === 'Completed').length,
   };
 
   return (
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
 
       {/* Filter Tabs */}
       <div className="mb-6 flex space-x-2 overflow-x-auto">
-        {['all', 'Nieuw', 'In Behandeling', 'Voltooid'].map((status) => (
+        {['all', 'New', 'In Progress', 'Completed'].map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
-            {status === 'all' ? t('admin.all') : status === 'Nieuw' ? t('admin.new') : status === 'In Behandeling' ? t('admin.inProgress') : t('admin.completed')}
+            {status === 'all' ? t('admin.all') : status === 'New' ? t('admin.new') : status === 'In Progress' ? t('admin.inProgress') : t('admin.completed')}
           </button>
         ))}
       </div>
@@ -436,9 +436,9 @@ export default function AdminDashboard() {
                             : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                         }`}
                       >
-                        <option value="Nieuw">{t('admin.new')}</option>
-                        <option value="In Behandeling">{t('admin.inProgress')}</option>
-                        <option value="Voltooid">{t('admin.completed')}</option>
+                        <option value="New">{t('admin.new')}</option>
+                        <option value="In Progress">{t('admin.inProgress')}</option>
+                        <option value="Completed">{t('admin.completed')}</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -513,9 +513,9 @@ export default function AdminDashboard() {
                 }}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-modual-purple"
               >
-                <option value="Nieuw">{t('admin.new')}</option>
-                <option value="In Behandeling">{t('admin.inProgress')}</option>
-                <option value="Voltooid">{t('admin.completed')}</option>
+                <option value="New">{t('admin.new')}</option>
+                <option value="In Progress">{t('admin.inProgress')}</option>
+                <option value="Completed">{t('admin.completed')}</option>
               </select>
             </div>
 

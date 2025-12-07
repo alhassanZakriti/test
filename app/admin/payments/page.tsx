@@ -8,20 +8,23 @@ import { useLanguage } from '@/contexts/LanguageContext';
 export default function AdminPaymentsPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-        setCsvFile(file);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      const isCSV = selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv');
+      const isPDF = selectedFile.type === 'application/pdf' || selectedFile.name.endsWith('.pdf');
+      
+      if (isCSV || isPDF) {
+        setFile(selectedFile);
         setError(null);
       } else {
-        setError('Please select a valid CSV file');
-        setCsvFile(null);
+        setError('Please select a valid CSV or PDF file');
+        setFile(null);
       }
     }
   };
@@ -55,7 +58,7 @@ export default function AdminPaymentsPage() {
   };
 
   const handleUpload = async () => {
-    if (!csvFile) {
+    if (!file) {
       setError('Please select a file first');
       return;
     }
@@ -65,12 +68,35 @@ export default function AdminPaymentsPage() {
     setResults(null);
 
     try {
-      // Read CSV file
-      const text = await csvFile.text();
-      const csvData = parseCSV(text);
+      let paymentData = [];
 
-      if (csvData.length === 0) {
-        setError('No valid data found in CSV file');
+      if (file.name.endsWith('.csv')) {
+        // Read CSV file
+        const text = await file.text();
+        paymentData = parseCSV(text);
+      } else if (file.name.endsWith('.pdf')) {
+        // Convert PDF to base64 and send to API for parsing
+        const arrayBuffer = await file.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        
+        const pdfResponse = await fetch('/api/admin/payments/parse-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ pdfBase64: base64 }),
+        });
+
+        if (!pdfResponse.ok) {
+          throw new Error('Failed to parse PDF file');
+        }
+
+        const pdfData = await pdfResponse.json();
+        paymentData = pdfData.data;
+      }
+
+      if (paymentData.length === 0) {
+        setError('No valid data found in file');
         setProcessing(false);
         return;
       }
@@ -81,7 +107,7 @@ export default function AdminPaymentsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ csvData }),
+        body: JSON.stringify({ csvData: paymentData }),
       });
 
       if (!response.ok) {
@@ -112,27 +138,27 @@ export default function AdminPaymentsPage() {
             Payment Tracking
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Upload CIH bank CSV file to automatically match payments and notify clients
+            Upload CIH bank CSV or PDF file to automatically match payments and notify clients
           </p>
         </div>
 
         {/* Upload Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Upload Bank CSV
+            Upload Bank Statement (CSV or PDF)
           </h2>
           
           <div className="space-y-4">
             <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
               <input
                 type="file"
-                accept=".csv"
+                accept=".csv,.pdf"
                 onChange={handleFileChange}
                 className="hidden"
-                id="csv-upload"
+                id="file-upload"
               />
               <label
-                htmlFor="csv-upload"
+                htmlFor="file-upload"
                 className="cursor-pointer inline-flex flex-col items-center"
               >
                 <svg
@@ -149,29 +175,44 @@ export default function AdminPaymentsPage() {
                   />
                 </svg>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Click to select CSV file
+                  Click to select CSV or PDF file
                 </span>
               </label>
-              {csvFile && (
+              {file && (
                 <p className="mt-3 text-sm text-purple-600 dark:text-purple-400">
-                  Selected: {csvFile.name}
+                  Selected: {file.name} ({file.name.endsWith('.pdf') ? 'PDF' : 'CSV'})
                 </p>
               )}
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                CSV Format Required:
+                Supported Formats:
               </h3>
-              <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
-                Your CSV file should have these columns (with header row):
-              </p>
-              <code className="block text-xs bg-white dark:bg-gray-800 p-2 rounded">
-                Date,Amount,Description,Sender Name
-              </code>
-              <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
-                Example: 2025-12-04,150,Payment MOD00001234,John Doe
-              </p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    📄 CSV Format:
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">
+                    Your CSV file should have these columns (with header row):
+                  </p>
+                  <code className="block text-xs bg-white dark:bg-gray-800 p-2 rounded">
+                    Date,Amount,Description,Sender Name
+                  </code>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    Example: 2025-12-04,150,Payment MOD00001234,John Doe
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    📑 PDF Format:
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Bank statement PDF with transaction details. The system will automatically extract payment codes (MODXXXXXXXX) from the document.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {error && (
@@ -182,7 +223,7 @@ export default function AdminPaymentsPage() {
 
             <button
               onClick={handleUpload}
-              disabled={!csvFile || processing}
+              disabled={!file || processing}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {processing ? (
@@ -308,9 +349,9 @@ export default function AdminPaymentsPage() {
             How it works:
           </h3>
           <ol className="list-decimal list-inside space-y-2 text-sm text-purple-800 dark:text-purple-200">
-            <li>Export transactions from CIH bank as CSV</li>
-            <li>Upload the CSV file using the form above</li>
-            <li>System automatically matches MODXXXXXXXX codes with subscriptions</li>
+            <li>Export transactions from CIH bank as CSV or PDF</li>
+            <li>Upload the file using the form above</li>
+            <li>System automatically extracts and matches MODXXXXXXXX codes with subscriptions</li>
             <li>Verified payments update subscription status to &quot;Paid&quot;</li>
             <li>Clients receive automatic email + WhatsApp notifications</li>
             <li>View results and any unmatched transactions</li>

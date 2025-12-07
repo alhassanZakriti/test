@@ -208,9 +208,9 @@ export default function ProjectPage() {
                     onChange={(e) => handleStatusUpdate(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-modual-purple dark:focus:ring-modual-pink"
                   >
-                    <option value="Nieuw">{t('common.new')}</option>
-                    <option value="In Behandeling">{t('common.inProgress')}</option>
-                    <option value="Voltooid">{t('common.completed')}</option>
+                    <option value="New">{t('common.new')}</option>
+                    <option value="In Progress">{t('common.inProgress')}</option>
+                    <option value="Completed">{t('common.completed')}</option>
                   </select>
                 </div>
               )}

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { sendEmailNotification } from '@/lib/notifications';
+import { sendNewProjectNotificationToAdmin } from '@/lib/email';
 
 export async function GET(request: Request) {
   try {
@@ -64,14 +65,14 @@ export async function POST(request: Request) {
     const project = await prisma.project.create({
       data: {
         userId,
-        title: title || 'Nieuw Project',
+        title: title || 'New Project',
         phoneNumber,
         description,
         textInput,
         logoUrl,
         photoUrls: JSON.stringify(photoUrls || []),
         voiceMemoUrl,
-        status: 'Nieuw',
+        status: 'New',
       },
     });
 
@@ -84,11 +85,25 @@ export async function POST(request: Request) {
       phoneNumber: phoneNumber,
     };
 
-    // Send email notification to info@modual.ma
+    // Send email notification to info@modual.ma using new email function
+    try {
+      await sendNewProjectNotificationToAdmin({
+        clientName: session.user.name || 'Unknown',
+        clientEmail: session.user.email || '',
+        projectTitle: title || 'New Project',
+        projectId: project.id,
+        phoneNumber: phoneNumber,
+        description: textInput || description,
+      });
+    } catch (emailError) {
+      console.error('Email notification error:', emailError);
+    }
+
+    // Also send via old notification system (backward compatibility)
     try {
       await sendEmailNotification(notificationData);
     } catch (emailError) {
-      console.error('Email notification error:', emailError);
+      console.error('Legacy email notification error:', emailError);
     }
 
     // Send WhatsApp notification to admin

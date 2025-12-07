@@ -29,21 +29,21 @@ export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData)
   }
 
   const statusMessages: Record<string, { nl: string; en: string; fr: string; ar: string; emoji: string }> = {
-    'Nieuw': {
+    'New': {
       nl: 'Uw project is ontvangen en wacht op verwerking.',
-      en: 'Your project has been received and is waiting to be processed.',
-      fr: 'Votre projet a été reçu et attend d\'être traité.',
+      en: 'Your project has been received and is awaiting processing.',
+      fr: 'Votre projet a été reçu et est en attente de traitement.',
       ar: 'تم استلام مشروعك وهو في انتظار المعالجة.',
       emoji: '📬'
     },
-    'In Behandeling': {
+    'In Progress': {
       nl: 'Ons team werkt momenteel aan uw project!',
       en: 'Our team is currently working on your project!',
       fr: 'Notre équipe travaille actuellement sur votre projet!',
       ar: 'فريقنا يعمل حاليا على مشروعك!',
       emoji: '🚀'
     },
-    'Voltooid': {
+    'Completed': {
       nl: 'Uw project is voltooid en klaar voor levering!',
       en: 'Your project is completed and ready for delivery!',
       fr: 'Votre projet est terminé et prêt à être livré!',
@@ -291,6 +291,113 @@ export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData)
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Error sending email:', error);
+    return { success: false, error };
+  }
+}
+
+// Send notification to admin when new project is created
+export async function sendNewProjectNotificationToAdmin(data: {
+  clientName: string;
+  clientEmail: string;
+  projectTitle: string;
+  projectId: string;
+  phoneNumber?: string;
+  description?: string;
+}) {
+  const { clientName, clientEmail, projectTitle, projectId, phoneNumber, description } = data;
+
+  // Skip if email is not configured
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    console.log('⚠️ Email not configured. Skipping admin notification.');
+    return { success: false, message: 'Email not configured' };
+  }
+
+  const adminEmails = ['info@modual.ma', 'modualtech@gmail.com'];
+  const dashboardUrl = `${process.env.NEXTAUTH_URL || 'https://modual.ma'}/admin/projects`;
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Project Created</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+      <h1 style="color: white; margin: 0; font-size: 28px;">🎉 New Project Created</h1>
+    </div>
+    
+    <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+        A new project has been submitted by a client.
+      </p>
+
+      <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h2 style="color: #9333ea; margin-top: 0; font-size: 18px;">Project Details</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Project ID:</td>
+            <td style="padding: 8px 0; color: #111827;">${projectId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Project Title:</td>
+            <td style="padding: 8px 0; color: #111827;">${projectTitle}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Client Name:</td>
+            <td style="padding: 8px 0; color: #111827;">${clientName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Client Email:</td>
+            <td style="padding: 8px 0; color: #111827;">${clientEmail}</td>
+          </tr>
+          ${phoneNumber ? `
+          <tr>
+            <td style="padding: 8px 0; color: #6b7280; font-weight: bold;">Phone Number:</td>
+            <td style="padding: 8px 0; color: #111827;">${phoneNumber}</td>
+          </tr>
+          ` : ''}
+        </table>
+        ${description ? `
+        <div style="margin-top: 15px;">
+          <p style="color: #6b7280; font-weight: bold; margin-bottom: 5px;">Description:</p>
+          <p style="color: #111827; margin: 0; white-space: pre-wrap;">${description}</p>
+        </div>
+        ` : ''}
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${dashboardUrl}" 
+           style="display: inline-block; background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%); color: white; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+          View in Admin Panel
+        </a>
+      </div>
+
+      <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 20px;">
+        <p style="color: #6b7280; font-size: 14px; text-align: center; margin: 0;">
+          This is an automated notification from Modual
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Modual System" <${process.env.SMTP_USER}>`,
+      to: adminEmails.join(', '),
+      subject: `🎉 New Project Created: ${projectTitle}`,
+      html: emailHtml,
+    });
+
+    console.log('✅ Admin notification sent successfully to:', adminEmails.join(', '), '- Message ID:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Error sending admin notification:', error);
     return { success: false, error };
   }
 }

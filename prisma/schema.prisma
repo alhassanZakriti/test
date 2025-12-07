@@ -76,7 +76,7 @@ model Project {
   logoUrl         String?  @db.Text // Base64 encoded logo
   photoUrls       String   @default("[]") @db.Text // JSON string of photo URLs
   voiceMemoUrl    String?  @db.Text
-  status          String   @default("Nieuw") // "Nieuw", "In Behandeling", "Voltooid"
+  status          String   @default("New") // "New", "In Progress", "Completed"
   assignedTo      String?
   aiPreview       String?  @db.Text
   createdAt       DateTime @default(now())

@@ -93,11 +93,11 @@ export default function DashboardPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Nieuw':
+      case 'New':
         return <FiClock className="text-blue-500 dark:text-blue-400" />;
-      case 'In Behandeling':
+      case 'In Progress':
         return <FiAlertCircle className="text-yellow-500 dark:text-yellow-400" />;
-      case 'Voltooid':
+      case 'Completed':
         return <FiCheckCircle className="text-green-500 dark:text-green-400" />;
       default:
         return <FiClock className="text-gray-500 dark:text-gray-400" />;
@@ -106,11 +106,11 @@ export default function DashboardPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Nieuw':
+      case 'New':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'In Behandeling':
+      case 'In Progress':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'Voltooid':
+      case 'Completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
@@ -119,11 +119,11 @@ export default function DashboardPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'Nieuw':
+      case 'New':
         return t('common.new');
-      case 'In Behandeling':
+      case 'In Progress':
         return t('common.inProgress');
-      case 'Voltooid':
+      case 'Completed':
         return t('common.completed');
       default:
         return status;

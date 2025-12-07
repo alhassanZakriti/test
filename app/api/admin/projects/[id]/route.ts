@@ -122,9 +122,9 @@ export async function PATCH(
       try {
         if (currentProject.phoneNumber) {
           const statusEmojis: Record<string, string> = {
-            'Nieuw': '📬',
-            'In Behandeling': '🚀',
-            'Voltooid': '✅'
+            'New': '📬',
+            'In Progress': '🚀',
+            'Completed': '✅'
           };
 
           const emoji = statusEmojis[status] || '🔔';
