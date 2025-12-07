@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { FiPlus, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiUser, FiMail, FiPhone } from 'react-icons/fi';
+import { FiPlus, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiUser, FiMail, FiPhone, FiCopy } from 'react-icons/fi';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Project {
@@ -26,15 +26,25 @@ interface Project {
   };
 }
 
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  paymentAlias?: string;
+}
+
 export default function DashboardPage() {
   const { t } = useLanguage();
   const { data: session } = useSession();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchProjects();
+    fetchUserData();
   }, []);
 
   const fetchProjects = async () => {
@@ -46,6 +56,24 @@ export default function DashboardPage() {
       console.error('Error fetching projects:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch('/api/user/me');
+      const data = await response.json();
+      setUserData(data.user);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  const copyPaymentAlias = () => {
+    if (userData?.paymentAlias) {
+      navigator.clipboard.writeText(userData.paymentAlias);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -110,6 +138,30 @@ export default function DashboardPage() {
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">{t('dashboard.manageProjects')}</p>
       </div>
+
+      {/* Payment Alias Card */}
+      {userData?.paymentAlias && (
+        <div className="mb-8 bg-gradient-to-r from-modual-pink via-modual-purple to-modual-blue p-6 rounded-lg shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-white font-semibold text-lg mb-1">💳 Your Payment ID</h3>
+              <p className="text-white/80 text-sm mb-3">Use this ID when making payments to track your transactions</p>
+              <div className="flex items-center space-x-3">
+                <code className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-mono text-lg font-bold">
+                  {userData.paymentAlias}
+                </code>
+                <button
+                  onClick={copyPaymentAlias}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-lg transition-all"
+                  title="Copy to clipboard"
+                >
+                  {copied ? '✓' : <FiCopy size={20} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-8">
         <Link

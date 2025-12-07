@@ -75,17 +75,28 @@ export async function POST(request: Request) {
       },
     });
 
-    // Send notification to admin
+    // Send notifications to admin (info@modual.ma and WhatsApp)
+    const notificationData = {
+      projectId: project.id,
+      userName: session.user.name || 'Onbekend',
+      userEmail: session.user.email || '',
+      description: textInput || description || 'Geen beschrijving',
+      phoneNumber: phoneNumber,
+    };
+
+    // Send email notification to info@modual.ma
     try {
-      await sendEmailNotification({
-        projectId: project.id,
-        userName: session.user.name || 'Onbekend',
-        userEmail: session.user.email || '',
-        description: textInput || description || 'Geen beschrijving',
-      });
-    } catch (notificationError) {
-      console.error('Notification error:', notificationError);
-      // Don't fail the project creation if notification fails
+      await sendEmailNotification(notificationData);
+    } catch (emailError) {
+      console.error('Email notification error:', emailError);
+    }
+
+    // Send WhatsApp notification to admin
+    try {
+      const { sendWhatsAppNotification } = await import('@/lib/notifications');
+      await sendWhatsAppNotification(notificationData);
+    } catch (whatsappError) {
+      console.error('WhatsApp notification error:', whatsappError);
     }
 
     return NextResponse.json({

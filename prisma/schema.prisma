@@ -44,6 +44,7 @@ model User {
   password      String?
   image         String?
   role          String    @default("user") // "user" or "admin"
+  paymentAlias  String?   @unique // MOD-XXXXXXXX format for payment tracking
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
