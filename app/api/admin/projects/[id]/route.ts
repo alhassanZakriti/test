@@ -30,6 +30,7 @@ export async function PATCH(
           select: {
             name: true,
             email: true,
+            preferredLanguage: true,
           },
         },
       },
@@ -56,6 +57,7 @@ export async function PATCH(
           select: {
             name: true,
             email: true,
+            preferredLanguage: true,
           },
         },
       },
@@ -65,15 +67,52 @@ export async function PATCH(
     if (status && status !== oldStatus && currentProject.user) {
       console.log(`📧 Status changed from "${oldStatus}" to "${status}". Sending notifications...`);
       
+      const userLang = currentProject.user.preferredLanguage || 'en';
+      
+      // Language-specific translations
+      const translations: Record<string, { greeting: string; statusChanged: string; project: string; status: string; viewDetails: string }> = {
+        en: {
+          greeting: 'Hello',
+          statusChanged: 'Your project status has been updated!',
+          project: 'Project',
+          status: 'Status',
+          viewDetails: 'View details'
+        },
+        nl: {
+          greeting: 'Hallo',
+          statusChanged: 'De status van uw project is bijgewerkt!',
+          project: 'Project',
+          status: 'Status',
+          viewDetails: 'Bekijk details'
+        },
+        fr: {
+          greeting: 'Bonjour',
+          statusChanged: 'Le statut de votre projet a été mis à jour!',
+          project: 'Projet',
+          status: 'Statut',
+          viewDetails: 'Voir les détails'
+        },
+        ar: {
+          greeting: 'مرحبا',
+          statusChanged: 'تم تحديث حالة مشروعك!',
+          project: 'المشروع',
+          status: 'الحالة',
+          viewDetails: 'عرض التفاصيل'
+        }
+      };
+
+      const t = translations[userLang] || translations.en;
+      
       // Send Email
       try {
         await sendProjectStatusUpdateEmail({
-          clientName: currentProject.user.name || 'Klant',
+          clientName: currentProject.user.name || t.greeting,
           clientEmail: currentProject.user.email,
-          projectTitle: currentProject.title || 'Uw Project',
+          projectTitle: currentProject.title || 'Project',
           oldStatus: oldStatus,
           newStatus: status,
           projectId: params.id,
+          preferredLanguage: userLang,
         });
       } catch (emailError) {
         console.error('⚠️ Failed to send email notification:', emailError);
@@ -95,14 +134,14 @@ export async function PATCH(
             message: `
 ${emoji} *Modual - Project Update*
 
-Hallo ${currentProject.user.name || 'Klant'},
+${t.greeting} ${currentProject.user.name || t.greeting},
 
-De status van uw project is bijgewerkt!
+${t.statusChanged}
 
-📋 *Project:* ${currentProject.title || 'Uw Project'}
-🔄 *Status:* ${oldStatus} → ${status}
+📋 *${t.project}:* ${currentProject.title || 'Project'}
+🔄 *${t.status}:* ${oldStatus} → ${status}
 
-Bekijk de details: modual.ma/dashboard
+${t.viewDetails}: modual.ma/dashboard
 
 _Modual.ma_
             `.trim(),

@@ -45,6 +45,12 @@ export default function Navbar() {
                 >
                   {t('nav.newProject')}
                 </Link>
+                <Link
+                  href="/dashboard/profile"
+                  className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
+                >
+                  {t('nav.profile') || 'Profile'}
+                </Link>
                 {(session.user as any)?.role === 'admin' && (
                   <Link
                     href="/admin"
@@ -136,6 +142,13 @@ export default function Navbar() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('nav.newProject')}
+                  </Link>
+                  <Link
+                    href="/dashboard/profile"
+                    className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('nav.profile') || 'Profile'}
                   </Link>
                   {(session.user as any)?.role === 'admin' && (
                     <Link

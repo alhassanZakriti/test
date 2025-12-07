@@ -16,10 +16,11 @@ export interface ProjectStatusEmailData {
   oldStatus: string;
   newStatus: string;
   projectId: string;
+  preferredLanguage?: string;
 }
 
 export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData) {
-  const { clientName, clientEmail, projectTitle, oldStatus, newStatus, projectId } = data;
+  const { clientName, clientEmail, projectTitle, oldStatus, newStatus, projectId, preferredLanguage = 'en' } = data;
 
   // Skip if email is not configured
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
@@ -27,20 +28,26 @@ export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData)
     return { success: false, message: 'Email not configured' };
   }
 
-  const statusMessages: Record<string, { nl: string; en: string; emoji: string }> = {
+  const statusMessages: Record<string, { nl: string; en: string; fr: string; ar: string; emoji: string }> = {
     'Nieuw': {
       nl: 'Uw project is ontvangen en wacht op verwerking.',
       en: 'Your project has been received and is waiting to be processed.',
+      fr: 'Votre projet a été reçu et attend d\'être traité.',
+      ar: 'تم استلام مشروعك وهو في انتظار المعالجة.',
       emoji: '📬'
     },
     'In Behandeling': {
       nl: 'Ons team werkt momenteel aan uw project!',
       en: 'Our team is currently working on your project!',
+      fr: 'Notre équipe travaille actuellement sur votre projet!',
+      ar: 'فريقنا يعمل حاليا على مشروعك!',
       emoji: '🚀'
     },
     'Voltooid': {
       nl: 'Uw project is voltooid en klaar voor levering!',
       en: 'Your project is completed and ready for delivery!',
+      fr: 'Votre projet est terminé et prêt à être livré!',
+      ar: 'مشروعك مكتمل وجاهز للتسليم!',
       emoji: '✅'
     }
   };
@@ -48,8 +55,14 @@ export async function sendProjectStatusUpdateEmail(data: ProjectStatusEmailData)
   const statusInfo = statusMessages[newStatus] || {
     nl: 'De status van uw project is bijgewerkt.',
     en: 'Your project status has been updated.',
+    fr: 'Le statut de votre projet a été mis à jour.',
+    ar: 'تم تحديث حالة مشروعك.',
     emoji: '🔔'
   };
+
+  // Get message in preferred language
+  const lang = ['en', 'nl', 'fr', 'ar'].includes(preferredLanguage) ? preferredLanguage as 'en' | 'nl' | 'fr' | 'ar' : 'en';
+  const message = statusInfo[lang];
 
   const emailHtml = `
 <!DOCTYPE html>

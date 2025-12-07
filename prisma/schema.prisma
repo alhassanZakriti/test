@@ -37,16 +37,20 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  role          String    @default("user") // "user" or "admin"
-  paymentAlias  String?   @unique // MODXXXXXXXX format for payment tracking
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  name             String?
+  firstName        String?
+  lastName         String?
+  email            String    @unique
+  emailVerified    DateTime?
+  password         String?
+  image            String?
+  phoneNumber      String?
+  role             String    @default("user") // "user" or "admin"
+  paymentAlias     String?   @unique // MODXXXXXXXX format for payment tracking
+  preferredLanguage String   @default("en") // "en", "nl", "fr", "ar"
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   accounts      Account[]
   sessions      Session[]
