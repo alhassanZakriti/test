@@ -109,7 +109,7 @@ export default function AdminPaymentsPage() {
             ← Back to Admin Dashboard
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            💳 Payment Tracking
+            Payment Tracking
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Upload CIH bank CSV file to automatically match payments and notify clients
@@ -119,7 +119,7 @@ export default function AdminPaymentsPage() {
         {/* Upload Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            📤 Upload Bank CSV
+            Upload Bank CSV
           </h2>
           
           <div className="space-y-4">
@@ -161,7 +161,7 @@ export default function AdminPaymentsPage() {
 
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                📋 CSV Format Required:
+                CSV Format Required:
               </h3>
               <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
                 Your CSV file should have these columns (with header row):
@@ -219,7 +219,7 @@ export default function AdminPaymentsPage() {
         {results && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              📊 Processing Results
+              Processing Results
             </h2>
 
             <div className="grid grid-cols-3 gap-4 mb-6">
@@ -228,7 +228,7 @@ export default function AdminPaymentsPage() {
                   {results.matched}
                 </div>
                 <div className="text-sm text-green-800 dark:text-green-200">
-                  ✅ Matched & Notified
+                  Matched & Notified
                 </div>
               </div>
 
@@ -237,7 +237,7 @@ export default function AdminPaymentsPage() {
                   {results.unmatched}
                 </div>
                 <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                  ⚠️ Unmatched
+                  Unmatched
                 </div>
               </div>
 
@@ -246,7 +246,7 @@ export default function AdminPaymentsPage() {
                   {results.errors}
                 </div>
                 <div className="text-sm text-red-800 dark:text-red-200">
-                  ❌ Errors
+                  Errors
                 </div>
               </div>
             </div>
@@ -305,13 +305,13 @@ export default function AdminPaymentsPage() {
         {/* Instructions */}
         <div className="mt-6 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
           <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-3">
-            💡 How it works:
+            How it works:
           </h3>
           <ol className="list-decimal list-inside space-y-2 text-sm text-purple-800 dark:text-purple-200">
             <li>Export transactions from CIH bank as CSV</li>
             <li>Upload the CSV file using the form above</li>
             <li>System automatically matches MOD-XXXX codes with subscriptions</li>
-            <li>Verified payments update subscription status to "Paid"</li>
+            <li>Verified payments update subscription status to &quot;Paid&quot;</li>
             <li>Clients receive automatic email + WhatsApp notifications</li>
             <li>View results and any unmatched transactions</li>
           </ol>

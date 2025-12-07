@@ -184,8 +184,8 @@ export default function Home() {
               {/* Basic Plan */}
               <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
                 <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('pricing.basicPlan')}</h3>
-                <div className="flex items-end gap-2 mb-4">
-                  <span className="text-4xl font-bold gradient-text">{t('pricing.basicPrice')}</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-4xl font-bold gradient-text mx-auto">{t('pricing.basicPrice')}</span>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.basicDescription')}</p>
                 <Link
@@ -204,8 +204,8 @@ export default function Home() {
                   </span>
                 </div>
                 <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('pricing.proPlan')}</h3>
-                <div className="flex items-end gap-2 mb-4">
-                  <span className="text-4xl font-bold gradient-text">{t('pricing.proPrice')}</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-4xl font-bold gradient-text mx-auto">{t('pricing.proPrice')}</span>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.proDescription')}</p>
                 <Link
@@ -219,8 +219,8 @@ export default function Home() {
               {/* Enterprise Plan */}
               <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
                 <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('pricing.enterprisePlan')}</h3>
-                <div className="flex items-end gap-2 mb-4">
-                  <span className="text-4xl font-bold gradient-text">{t('pricing.enterprisePrice')}</span>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-4xl font-bold gradient-text mx-auto">{t('pricing.enterprisePrice')}</span>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.enterpriseDescription')}</p>
                 <Link

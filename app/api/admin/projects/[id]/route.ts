@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { sendProjectStatusUpdateEmail } from '@/lib/email';
+import { sendWhatsAppMessage } from '@/lib/whatsapp';
 
 export async function PATCH(
   request: Request,
@@ -60,10 +61,11 @@ export async function PATCH(
       },
     });
 
-    // Send email notification if status changed
+    // Send email & WhatsApp notification if status changed
     if (status && status !== oldStatus && currentProject.user) {
-      console.log(`📧 Status changed from "${oldStatus}" to "${status}". Sending email...`);
+      console.log(`📧 Status changed from "${oldStatus}" to "${status}". Sending notifications...`);
       
+      // Send Email
       try {
         await sendProjectStatusUpdateEmail({
           clientName: currentProject.user.name || 'Klant',
@@ -75,7 +77,40 @@ export async function PATCH(
         });
       } catch (emailError) {
         console.error('⚠️ Failed to send email notification:', emailError);
-        // Don't fail the request if email fails
+      }
+
+      // Send WhatsApp (if phone number available)
+      try {
+        if (currentProject.phoneNumber) {
+          const statusEmojis: Record<string, string> = {
+            'Nieuw': '📬',
+            'In Behandeling': '🚀',
+            'Voltooid': '✅'
+          };
+
+          const emoji = statusEmojis[status] || '🔔';
+
+          await sendWhatsAppMessage({
+            to: currentProject.phoneNumber,
+            message: `
+${emoji} *Modual - Project Update*
+
+Hallo ${currentProject.user.name || 'Klant'},
+
+De status van uw project is bijgewerkt!
+
+📋 *Project:* ${currentProject.title || 'Uw Project'}
+🔄 *Status:* ${oldStatus} → ${status}
+
+Bekijk de details: modual.ma/dashboard
+
+_Modual.ma_
+            `.trim(),
+          });
+          console.log('✅ WhatsApp notification sent');
+        }
+      } catch (whatsappError) {
+        console.error('⚠️ Failed to send WhatsApp notification:', whatsappError);
       }
     }
 
