@@ -7,7 +7,8 @@
     "register": "S'inscrire",
     "logout": "Déconnexion",
     "getStarted": "Commencer maintenant",
-    "pricing": "Tarifs"
+    "pricing": "Tarifs",
+    "profile": "Profil"
   },
   "home": {
     "heroTitle": "Laissez Modual Créer Le Site Web De Vos Rêves",
@@ -178,7 +179,8 @@
     "all": "Tout",
     "new": "Nouveau",
     "inProgress": "En cours",
-    "completed": "Terminé"
+    "completed": "Terminé",
+    "profile": "Profil"
   },
   "projectDetail": {
     "projectDetails": "Détails du Projet",

@@ -7,7 +7,8 @@
     "register": "Registreren",
     "logout": "Uitloggen",
     "getStarted": "Gratis beginnen",
-    "pricing": "Prijzen"
+    "pricing": "Prijzen",
+    "profile": "Profiel"
   },
   "home": {
     "heroTitle": "Laat Modual Je Droomwebsite Bouwen",
@@ -178,7 +179,8 @@
     "all": "Alle",
     "new": "Nieuw",
     "inProgress": "In Behandeling",
-    "completed": "Voltooid"
+    "completed": "Voltooid",
+    "profile": "Profiel"
   },
   "projectDetail": {
     "projectDetails": "Project Details",
