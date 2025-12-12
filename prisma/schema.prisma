@@ -52,10 +52,12 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  projects      Project[]
-  subscriptions Subscription[] @relation("UserSubscriptions")
+  accounts          Account[]
+  sessions          Session[]
+  projects          Project[]
+  subscriptions     Subscription[] @relation("UserSubscriptions")
+  currentSubscription Subscription? @relation("CurrentSubscription", fields: [currentSubscriptionId], references: [id])
+  currentSubscriptionId String? @unique
 }
 
 model VerificationToken {
@@ -99,6 +101,7 @@ model Subscription {
   updatedAt       DateTime  @updatedAt
 
   user            User      @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  currentUser     User?     @relation("CurrentSubscription")
   payments        Payment[]
 
   @@index([userId])
@@ -111,10 +114,12 @@ model Payment {
   subscriptionId  String
   amount          Int          // Amount in MAD
   transactionDate DateTime
-  bankReference   String?      // Bank transaction reference
+  bankReference   String?      // Bank transaction reference (MODXXXXXXXX from receipt)
   description     String?      @db.Text // Transaction description from bank
   senderName      String?
   method          String       @default("Bank Transfer") // Payment method
+  receiptUrl      String?      @db.Text // Base64 encoded receipt image
+  receiptData     String?      @db.Text // JSON with extracted OCR data
   verified        Boolean      @default(false) // Manually verified by admin
   notificationSent Boolean     @default(false) // Email/WhatsApp sent
   createdAt       DateTime     @default(now())
@@ -124,5 +129,6 @@ model Payment {
 
   @@index([subscriptionId])
   @@index([transactionDate])
+  @@index([verified])
 }
 

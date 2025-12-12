@@ -14,12 +14,28 @@ interface UserProfile {
   phoneNumber?: string;
   paymentAlias?: string;
   preferredLanguage: string;
+  role?: string;
+}
+
+interface SubscriptionStatus {
+  needsPayment: boolean;
+  status: string;
+  daysRemaining: number;
+  expirationDate: string | null;
+  plan?: string;
+  price?: number;
+  lastPayment?: {
+    amount: number;
+    date: string;
+    verified: boolean;
+  };
 }
 
 export default function ProfilePage() {
   const { data: session } = useSession();
   const { t, locale, setLocale } = useLanguage();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -35,6 +51,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
+    fetchSubscriptionStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
@@ -56,6 +74,24 @@ export default function ProfilePage() {
       console.error('Error fetching profile:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchSubscriptionStatus = async () => {
+    try {
+      // Don't fetch subscription status for admins
+      if (profile?.role === 'admin') {
+        return;
+      }
+      
+      const response = await fetch('/api/user/subscription-status');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSubscriptionStatus(data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
     }
   };
 
@@ -127,8 +163,8 @@ export default function ProfilePage() {
         </p>
       </motion.div>
 
-      {/* Payment Alias Card */}
-      {profile?.paymentAlias && (
+      {/* Payment Alias Card - Only show for regular users, not admins */}
+      {profile?.paymentAlias && profile?.role !== 'admin' && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -154,6 +190,83 @@ export default function ProfilePage() {
                 </button>
               </div>
             </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Subscription Status Card */}
+      {subscriptionStatus && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className={`mb-8 p-6 rounded-lg shadow-lg ${
+            subscriptionStatus.status === 'Paid'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+              : subscriptionStatus.status === 'Pending Verification'
+              ? 'bg-gradient-to-r from-orange-500 to-amber-600'
+              : 'bg-gradient-to-r from-red-500 to-rose-600'
+          }`}
+        >
+          <div className="text-white">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-xl">📅 Subscription Status</h3>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                subscriptionStatus.status === 'Paid'
+                  ? 'bg-white/30'
+                  : 'bg-white/40'
+              }`}>
+                {subscriptionStatus.status}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <p className="text-white/70 text-sm">Plan</p>
+                <p className="text-white font-semibold text-lg">
+                  {subscriptionStatus.plan || 'Basic'}
+                </p>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <p className="text-white/70 text-sm">Days Remaining</p>
+                <p className="text-white font-semibold text-lg">
+                  {subscriptionStatus.daysRemaining > 0 
+                    ? `${subscriptionStatus.daysRemaining} days`
+                    : 'Expired'}
+                </p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <p className="text-white/70 text-sm">Next Payment</p>
+                <p className="text-white font-semibold text-lg">
+                  {subscriptionStatus.price || 150} MAD
+                </p>
+              </div>
+            </div>
+
+            {subscriptionStatus.expirationDate && (
+              <p className="text-white/80 text-sm">
+                Expires on: {new Date(subscriptionStatus.expirationDate).toLocaleDateString()}
+              </p>
+            )}
+
+            {subscriptionStatus.lastPayment && (
+              <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <p className="text-white/70 text-sm mb-2">Last Payment</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span>{subscriptionStatus.lastPayment.amount} MAD</span>
+                  <span>{new Date(subscriptionStatus.lastPayment.date).toLocaleDateString()}</span>
+                  <span className={`px-2 py-1 rounded ${
+                    subscriptionStatus.lastPayment.verified 
+                      ? 'bg-green-500/50' 
+                      : 'bg-yellow-500/50'
+                  }`}>
+                    {subscriptionStatus.lastPayment.verified ? '✓ Verified' : '⏳ Pending'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
