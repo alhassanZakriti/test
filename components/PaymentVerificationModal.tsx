@@ -34,6 +34,7 @@ export default function PaymentVerificationModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
@@ -48,11 +49,51 @@ export default function PaymentVerificationModal({
     }
   }, [isOpen]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement('img');
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Resize if image is too large
+          const maxDimension = 1200;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height * maxDimension) / width;
+              width = maxDimension;
+            } else {
+              width = (width * maxDimension) / height;
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG with 0.8 quality
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(compressedBase64);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('File size must be less than 5MB');
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
         return;
       }
 
@@ -64,12 +105,14 @@ export default function PaymentVerificationModal({
       setSelectedFile(file);
       setError(null);
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Compress image before preview
+        const compressedImage = await compressImage(file);
+        setPreviewUrl(compressedImage);
+      } catch (err) {
+        setError('Failed to process image');
+        console.error('Image compression error:', err);
+      }
     }
   };
 
@@ -78,8 +121,11 @@ export default function PaymentVerificationModal({
 
     setUploading(true);
     setError(null);
+    setUploadProgress('Preparing image...');
 
     try {
+      setUploadProgress('Uploading receipt...');
+      
       const response = await fetch('/api/user/upload-receipt', {
         method: 'POST',
         headers: {
@@ -96,16 +142,18 @@ export default function PaymentVerificationModal({
         throw new Error(data.error || 'Failed to upload receipt');
       }
 
+      setUploadProgress('');
       setSuccess(true);
-      setExtractedData(data.extractedData);
+      setExtractedData(data);
       
       // Notify parent component
       setTimeout(() => {
         onPaymentSubmitted();
-      }, 2000);
+      }, 3000);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload receipt');
+      setUploadProgress('');
     } finally {
       setUploading(false);
     }
@@ -215,15 +263,13 @@ export default function PaymentVerificationModal({
                   Receipt Uploaded Successfully!
                 </h4>
                 <p className="text-sm text-green-800 dark:text-green-200 mt-1">
-                  Your payment receipt has been submitted for verification. Our team will review it shortly.
+                  {extractedData?.message || 'Your receipt is being processed in the background. You can leave this page - we will send you an email notification once your payment has been verified by our admin team.'}
                 </p>
-                {extractedData && (
-                  <div className="mt-3 space-y-1 text-sm text-green-700 dark:text-green-300">
-                    <div><strong>Reference:</strong> {extractedData.motif || 'N/A'}</div>
-                    <div><strong>Amount:</strong> {extractedData.amount ? `${extractedData.amount} MAD` : 'N/A'}</div>
-                    <div><strong>Date:</strong> {extractedData.date || 'N/A'}</div>
-                  </div>
-                )}
+                <div className="mt-3 p-3 bg-green-100 dark:bg-green-900/40 rounded-md">
+                  <p className="text-xs text-green-700 dark:text-green-300">
+                    <strong>📧 Email Notification:</strong> You will receive an email when your payment is approved or if additional information is needed.
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -254,7 +300,7 @@ export default function PaymentVerificationModal({
                       <span className="font-semibold">Click to upload</span> or drag and drop
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      PNG, JPG or JPEG (MAX. 5MB)
+                      PNG, JPG or JPEG (MAX. 10MB - Automatically compressed)
                     </p>
                   </div>
                   <input
@@ -301,23 +347,30 @@ export default function PaymentVerificationModal({
             >
               Cancel
             </button>
-            <button
-              onClick={handleUpload}
-              disabled={!selectedFile || uploading}
-              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  Upload Receipt
-                </>
+            <div className="flex flex-col items-end gap-2">
+              {uploadProgress && (
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  {uploadProgress}
+                </p>
               )}
-            </button>
+              <button
+                onClick={handleUpload}
+                disabled={!selectedFile || uploading}
+                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Upload Receipt
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>

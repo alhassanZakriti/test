@@ -9,6 +9,34 @@ const transporter = nodemailer.createTransport({
   } : undefined,
 });
 
+// Generic send email function
+export async function sendEmail(options: {
+  to: string;
+  subject: string;
+  html: string;
+  from?: string;
+}) {
+  // Skip if email is not configured
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    console.log('⚠️ Email not configured. Skipping email notification.');
+    return { success: false, message: 'Email not configured' };
+  }
+
+  try {
+    await transporter.sendMail({
+      from: options.from || process.env.SMTP_USER,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+
+    return { success: true, message: 'Email sent successfully' };
+  } catch (error) {
+    console.error('Email sending error:', error);
+    throw error;
+  }
+}
+
 export interface ProjectStatusEmailData {
   clientName: string;
   clientEmail: string;

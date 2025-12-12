@@ -12,6 +12,59 @@ interface ExtractedReceiptData {
   rawText: string;
 }
 
+// Background OCR processing function
+async function processReceiptOCR(paymentId: string, receiptImage: string, userEmail: string | null) {
+  try {
+    console.log(`Starting background OCR processing for payment ${paymentId}`);
+    
+    // Process image
+    const base64Data = receiptImage.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    // Initialize Tesseract worker
+    const worker = await createWorker('eng');
+    
+    // Perform OCR
+    const { data: { text } } = await worker.recognize(buffer);
+    await worker.terminate();
+
+    // Extract receipt information
+    const extractedData = extractReceiptInfo(text);
+
+    // Update payment with extracted data
+    await prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        amount: extractedData.amount || 0,
+        transactionDate: extractedData.date ? new Date(extractedData.date) : new Date(),
+        bankReference: extractedData.motif || undefined,
+        senderName: extractedData.senderName || undefined,
+        receiptData: JSON.stringify({
+          ...extractedData,
+          status: 'processed',
+          processedAt: new Date().toISOString()
+        })
+      }
+    });
+
+    console.log(`OCR processing completed successfully for payment ${paymentId}`);
+  } catch (error) {
+    console.error(`OCR processing failed for payment ${paymentId}:`, error);
+    
+    // Update payment with error status
+    await prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        receiptData: JSON.stringify({
+          status: 'ocr_failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          failedAt: new Date().toISOString()
+        })
+      }
+    }).catch(err => console.error('Failed to update payment error status:', err));
+  }
+}
+
 function extractReceiptInfo(text: string): ExtractedReceiptData {
   const lines = text.split('\n').map(line => line.trim());
   
@@ -121,32 +174,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Initialize Tesseract worker
-    const worker = await createWorker('eng+fra+ara');
-    
-    // Process image (remove data:image prefix if present)
-    const base64Data = receiptImage.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    
-    // Perform OCR
-    const { data: { text } } = await worker.recognize(buffer);
-    await worker.terminate();
-
-    // Extract receipt information
-    const extractedData = extractReceiptInfo(text);
-
-    // Validate extracted data
-    if (!extractedData.motif) {
-      return NextResponse.json(
-        { 
-          error: 'Could not find payment reference (MODXXXXXXXX) in receipt',
-          extractedData: extractedData,
-          suggestion: 'Please ensure the receipt is clear and contains the payment reference'
-        },
-        { status: 400 }
-      );
-    }
-
     // Check if user has a subscription
     let subscription = user.currentSubscription;
     
@@ -155,7 +182,7 @@ export async function POST(req: NextRequest) {
       subscription = await prisma.subscription.create({
         data: {
           userId: user.id,
-          uniqueCode: user.paymentAlias || extractedData.motif,
+          uniqueCode: user.paymentAlias || 'UNKNOWN',
           status: 'Not Paid',
           plan: 'Basic',
           price: 150
@@ -169,38 +196,48 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create payment record (pending verification)
+    // Create payment record immediately (OCR will process in background)
     const payment = await prisma.payment.create({
       data: {
         subscriptionId: subscription.id,
-        amount: extractedData.amount || 0,
-        transactionDate: extractedData.date 
-          ? new Date(extractedData.date)
-          : new Date(),
-        bankReference: extractedData.motif,
-        senderName: extractedData.senderName || user.name || 'Unknown',
+        amount: 0, // Will be updated after OCR processing
+        transactionDate: new Date(),
+        bankReference: user.paymentAlias,
+        senderName: user.name || 'Unknown',
         receiptUrl: receiptImage,
-        receiptData: JSON.stringify(extractedData),
+        receiptData: JSON.stringify({
+          status: 'processing',
+          uploadedAt: new Date().toISOString()
+        }),
         verified: false,
         notificationSent: false
       }
     });
 
-    // Send notification to admin for verification
-    // TODO: Add email/WhatsApp notification to admin
+    // Update subscription status to pending verification
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { 
+        status: 'Pending Verification'
+      }
+    });
 
-    return NextResponse.json({
+    // Return immediately to user
+    const response = NextResponse.json({
       success: true,
       payment: {
         id: payment.id,
-        amount: payment.amount,
-        date: payment.transactionDate,
-        reference: payment.bankReference,
-        verified: payment.verified
+        status: 'processing'
       },
-      extractedData: extractedData,
-      message: 'Receipt uploaded successfully. Pending admin verification.'
+      message: 'Receipt uploaded successfully! We are processing your receipt in the background. You will receive an email notification once it has been verified by our admin team.'
     });
+
+    // Process OCR asynchronously (don't await - let it run in background)
+    processReceiptOCR(payment.id, receiptImage, user.email).catch(error => {
+      console.error('Background OCR processing failed:', error);
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Error processing receipt:', error);
