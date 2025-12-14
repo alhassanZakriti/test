@@ -17,6 +17,26 @@ async function processReceiptOCR(paymentId: string, receiptImage: string, userEm
   try {
     console.log(`Starting background OCR processing for payment ${paymentId}`);
     
+    // Get payment details with user info
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        subscription: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!payment) {
+      console.error(`Payment ${paymentId} not found`);
+      return;
+    }
+
+    const expectedPaymentAlias = payment.subscription.uniqueCode;
+    const expectedAmount = payment.subscription.price || 150;
+    
     // Process image
     const base64Data = receiptImage.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
@@ -31,23 +51,36 @@ async function processReceiptOCR(paymentId: string, receiptImage: string, userEm
     // Extract receipt information
     const extractedData = extractReceiptInfo(text);
 
+    // Validate extracted data
+    const isMotifMatch = extractedData.motif === expectedPaymentAlias;
+    const isAmountMatch = extractedData.amount && Math.abs(extractedData.amount - expectedAmount) <= 10;
+    const confidenceScore = (isMotifMatch ? 50 : 0) + (isAmountMatch ? 40 : 0) + (extractedData.date ? 10 : 0);
+
     // Update payment with extracted data
     await prisma.payment.update({
       where: { id: paymentId },
       data: {
         amount: extractedData.amount || 0,
         transactionDate: extractedData.date ? new Date(extractedData.date) : new Date(),
-        bankReference: extractedData.motif || undefined,
-        senderName: extractedData.senderName || undefined,
+        bankReference: extractedData.motif || expectedPaymentAlias,
+        senderName: extractedData.senderName || payment.subscription.user.name || undefined,
         receiptData: JSON.stringify({
           ...extractedData,
           status: 'processed',
-          processedAt: new Date().toISOString()
+          processedAt: new Date().toISOString(),
+          validation: {
+            expectedMotif: expectedPaymentAlias,
+            expectedAmount: expectedAmount,
+            motifMatch: isMotifMatch,
+            amountMatch: isAmountMatch,
+            confidenceScore: confidenceScore
+          }
         })
       }
     });
 
-    console.log(`OCR processing completed successfully for payment ${paymentId}`);
+    console.log(`OCR processing completed for payment ${paymentId} - Confidence: ${confidenceScore}%`);
+    console.log(`Motif Match: ${isMotifMatch}, Amount Match: ${isAmountMatch}`);
   } catch (error) {
     console.error(`OCR processing failed for payment ${paymentId}:`, error);
     
@@ -66,63 +99,91 @@ async function processReceiptOCR(paymentId: string, receiptImage: string, userEm
 }
 
 function extractReceiptInfo(text: string): ExtractedReceiptData {
-  const lines = text.split('\n').map(line => line.trim());
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  const fullText = text.toUpperCase();
   
   let motif: string | null = null;
   let amount: number | null = null;
   let date: string | null = null;
   let senderName: string | null = null;
 
-  // Extract MODXXXXXXXX pattern
-  const modPattern = /MOD[A-Z0-9]{8}/i;
-  for (const line of lines) {
-    const match = line.match(modPattern);
-    if (match) {
-      motif = match[0].toUpperCase();
-      break;
-    }
-  }
-
-  // Extract amount (looking for patterns like "150 MAD", "150,00 MAD", "150.00")
-  const amountPattern = /(\d{1,10})[.,]?(\d{0,2})\s*(MAD|DH|dh)?/i;
-  for (const line of lines) {
-    const match = line.match(amountPattern);
-    if (match) {
-      const amountStr = match[1] + (match[2] ? '.' + match[2] : '');
-      const parsedAmount = parseFloat(amountStr);
-      if (parsedAmount >= 50 && parsedAmount <= 100000) { // Reasonable range
-        amount = parsedAmount;
+  // Enhanced MODXXXXXXXX pattern extraction - check multiple variations
+  const modPatterns = [
+    /MOD[A-Z0-9]{8}/gi,
+    /MOTIF[:\s]*MOD[A-Z0-9]{8}/gi,
+    /REFERENCE[:\s]*MOD[A-Z0-9]{8}/gi,
+    /REF[:\s]*MOD[A-Z0-9]{8}/gi
+  ];
+  
+  for (const pattern of modPatterns) {
+    const matches = text.match(pattern);
+    if (matches) {
+      // Extract just the MODXXXXXXXX part
+      const modMatch = matches[0].match(/MOD[A-Z0-9]{8}/i);
+      if (modMatch) {
+        motif = modMatch[0].toUpperCase();
         break;
       }
     }
   }
 
-  // Extract date (DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD)
-  const datePattern = /(\d{2})[\/\-](\d{2})[\/\-](\d{4})|(\d{4})[\/\-](\d{2})[\/\-](\d{2})/;
-  for (const line of lines) {
-    const match = line.match(datePattern);
-    if (match) {
-      if (match[1]) {
-        // DD/MM/YYYY format
-        date = `${match[3]}-${match[2]}-${match[1]}`;
-      } else if (match[4]) {
-        // YYYY-MM-DD format
-        date = `${match[4]}-${match[5]}-${match[6]}`;
+  // Enhanced amount extraction with multiple patterns
+  const amountPatterns = [
+    /MONTANT[:\s]*(\d{1,6})[.,]?(\d{0,2})\s*(MAD|DH)/gi,
+    /AMOUNT[:\s]*(\d{1,6})[.,]?(\d{0,2})\s*(MAD|DH)/gi,
+    /(\d{1,6})[.,](\d{2})\s*(MAD|DH)/gi,
+    /(\d{1,6})\s*(MAD|DH)/gi
+  ];
+  
+  for (const pattern of amountPatterns) {
+    for (const line of lines) {
+      const match = line.match(pattern);
+      if (match) {
+        const amountStr = match[1] + (match[2] && match[2] !== '' ? '.' + match[2] : '.00');
+        const parsedAmount = parseFloat(amountStr);
+        if (parsedAmount >= 50 && parsedAmount <= 10000) {
+          amount = parsedAmount;
+          break;
+        }
       }
-      break;
     }
+    if (amount) break;
   }
 
-  // Extract sender name (look for "De:" or "From:" or name patterns)
+  // Enhanced date extraction with multiple formats
+  const datePatterns = [
+    /DATE[:\s]*(\d{2})[\/\-](\d{2})[\/\-](\d{4})/i,
+    /(\d{2})[\/\-](\d{2})[\/\-](\d{4})/,
+    /(\d{4})[\/\-](\d{2})[\/\-](\d{2})/
+  ];
+  
+  for (const pattern of datePatterns) {
+    for (const line of lines) {
+      const match = line.match(pattern);
+      if (match) {
+        if (match[1] && parseInt(match[1]) <= 31) {
+          // DD/MM/YYYY format
+          date = `${match[3]}-${match[2]}-${match[1]}`;
+        } else if (match[1] && parseInt(match[1]) > 31) {
+          // YYYY-MM-DD format
+          date = `${match[1]}-${match[2]}-${match[3]}`;
+        }
+        break;
+      }
+    }
+    if (date) break;
+  }
+
+  // Enhanced sender name extraction
   const namePatterns = [
-    /(?:De|From|Nom|Name|Emetteur):\s*([A-Za-z\s]+)/i,
+    /(?:DE|FROM|NOM|NAME|EMETTEUR|EXPEDITEUR)[:\s]+([A-Z][A-Za-z\s]{2,40})/i,
     /^([A-Z][a-z]+\s+[A-Z][a-z]+)$/m
   ];
   
   for (const pattern of namePatterns) {
     for (const line of lines) {
       const match = line.match(pattern);
-      if (match && match[1]) {
+      if (match && match[1] && match[1].length >= 3) {
         senderName = match[1].trim();
         break;
       }
@@ -150,7 +211,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { receiptImage } = await req.json();
+    const { receiptImage, extractedData } = await req.json();
 
     if (!receiptImage) {
       return NextResponse.json(
@@ -158,6 +219,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    console.log('📨 Received extracted data from client:', extractedData);
 
     // Get user from database
     const user = await prisma.user.findUnique({
@@ -196,23 +259,38 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create payment record immediately (OCR will process in background)
+    // Use client-extracted data if available, otherwise defaults
+    const paymentAmount = extractedData?.amount || 0;
+    const transactionDate = extractedData?.date ? new Date(extractedData.date) : new Date();
+    const bankRef = extractedData?.motif || user.paymentAlias || 'UNKNOWN';
+    const sender = extractedData?.senderName || user.name || 'Unknown';
+
+    console.log('💾 Saving payment with extracted data:');
+    console.log('  Amount:', paymentAmount, 'MAD');
+    console.log('  Date:', transactionDate.toISOString());
+    console.log('  Reference:', bankRef);
+    console.log('  Sender:', sender);
+
+    // Create payment record with client-extracted data
     const payment = await prisma.payment.create({
       data: {
         subscriptionId: subscription.id,
-        amount: 0, // Will be updated after OCR processing
-        transactionDate: new Date(),
-        bankReference: user.paymentAlias,
-        senderName: user.name || 'Unknown',
+        amount: paymentAmount,
+        transactionDate: transactionDate,
+        bankReference: bankRef,
+        senderName: sender,
         receiptUrl: receiptImage,
         receiptData: JSON.stringify({
-          status: 'processing',
+          ...extractedData,
+          status: 'processed',
           uploadedAt: new Date().toISOString()
         }),
         verified: false,
         notificationSent: false
       }
     });
+
+    console.log('✅ Payment record created with ID:', payment.id);
 
     // Update subscription status to pending verification
     await prisma.subscription.update({

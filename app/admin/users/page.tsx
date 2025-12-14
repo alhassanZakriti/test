@@ -59,6 +59,54 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleApprove = async (userId: string, paymentId: string) => {
+    if (!confirm('Approve this payment and activate subscription?')) return;
+
+    try {
+      const response = await fetch('/api/admin/payments/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId, approve: true })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Payment approved successfully!');
+        fetchUsers(); // Refresh the list
+      } else {
+        alert(data.error || 'Failed to approve payment');
+      }
+    } catch (error) {
+      console.error('Error approving payment:', error);
+      alert('Failed to approve payment');
+    }
+  };
+
+  const handleReject = async (userId: string, paymentId: string) => {
+    if (!confirm('Reject this payment? User will need to upload a new receipt.')) return;
+
+    try {
+      const response = await fetch('/api/admin/payments/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId, approve: false })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Payment rejected. User will be notified via email.');
+        fetchUsers(); // Refresh the list
+      } else {
+        alert(data.error || 'Failed to reject payment');
+      }
+    } catch (error) {
+      console.error('Error rejecting payment:', error);
+      alert('Failed to reject payment');
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -284,14 +332,20 @@ export default function AdminUsersPage() {
                   Expiration
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Last Payment
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Projects
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     No users found
                   </td>
                 </tr>
@@ -350,10 +404,55 @@ export default function AdminUsersPage() {
                         ? new Date(user.subscription.expirationDate).toLocaleDateString()
                         : 'N/A'}
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {user.subscription?.lastPayment ? (
+                        <div className="space-y-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Amount: <span className="font-semibold text-gray-900 dark:text-white">{user.subscription.lastPayment.amount} MAD</span>
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Date: {new Date(user.subscription.lastPayment.transactionDate).toLocaleDateString('en-GB')}
+                          </div>
+                          {user.subscription.lastPayment.bankReference && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Ref: <span className="font-mono">{user.subscription.lastPayment.bankReference}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">No payment</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                         {user.projectCount} projects
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {user.subscription?.status === 'Pending Verification' && user.subscription.lastPayment ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleApprove(user.id, user.subscription!.lastPayment.id)}
+                            className="inline-flex items-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
+                          >
+                            ✓ Approve
+                          </button>
+                          <button
+                            onClick={() => handleReject(user.id, user.subscription!.lastPayment.id)}
+                            className="inline-flex items-center px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-md transition-colors"
+                          >
+                            ✗ Reject
+                          </button>
+                        </div>
+                      ) : user.statusColor === 'red' || user.statusText === 'Not Paid' ? (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Awaiting Payment
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          -
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

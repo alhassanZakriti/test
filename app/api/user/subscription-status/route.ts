@@ -94,7 +94,8 @@ export async function GET(req: NextRequest) {
         lastPayment: {
           amount: lastPayment.amount,
           date: lastPayment.transactionDate,
-          verified: lastPayment.verified
+          verified: lastPayment.verified,
+          bankReference: lastPayment.bankReference
         },
         paymentAlias: user.paymentAlias || subscription.uniqueCode
       });
@@ -118,7 +119,8 @@ export async function GET(req: NextRequest) {
       lastPayment: lastPayment ? {
         amount: lastPayment.amount,
         date: lastPayment.transactionDate,
-        verified: lastPayment.verified
+        verified: lastPayment.verified,
+        bankReference: lastPayment.bankReference
       } : null,
       paymentAlias: user.paymentAlias || subscription.uniqueCode
     });

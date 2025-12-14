@@ -18,21 +18,31 @@ export async function sendEmail(options: {
 }) {
   // Skip if email is not configured
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-    console.log('⚠️ Email not configured. Skipping email notification.');
+    console.warn('⚠️ Email not configured. SMTP_USER or SMTP_PASSWORD missing. Skipping email notification.');
     return { success: false, message: 'Email not configured' };
   }
 
+  console.log(`📧 Attempting to send email to: ${options.to}`);
+  console.log(`📧 Subject: ${options.subject}`);
+
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: options.from || process.env.SMTP_USER,
       to: options.to,
       subject: options.subject,
       html: options.html,
     });
 
-    return { success: true, message: 'Email sent successfully' };
+    console.log(`✅ Email sent successfully to: ${options.to}`);
+    console.log(`✅ Message ID: ${info.messageId}`);
+    
+    return { success: true, message: 'Email sent successfully', messageId: info.messageId };
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error(`❌ Email sending error to ${options.to}:`, error);
+    if (error instanceof Error) {
+      console.error(`❌ Error message: ${error.message}`);
+      console.error(`❌ Error stack: ${error.stack}`);
+    }
     throw error;
   }
 }

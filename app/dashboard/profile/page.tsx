@@ -252,18 +252,35 @@ export default function ProfilePage() {
             )}
 
             {subscriptionStatus.lastPayment && (
-              <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                <p className="text-white/70 text-sm mb-2">Last Payment</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span>{subscriptionStatus.lastPayment.amount} MAD</span>
-                  <span>{new Date(subscriptionStatus.lastPayment.date).toLocaleDateString()}</span>
-                  <span className={`px-2 py-1 rounded ${
-                    subscriptionStatus.lastPayment.verified 
-                      ? 'bg-green-500/50' 
-                      : 'bg-yellow-500/50'
-                  }`}>
-                    {subscriptionStatus.lastPayment.verified ? '✓ Verified' : '⏳ Pending'}
-                  </span>
+              <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <p className="text-white/70 text-sm mb-3 font-semibold">Last Payment Details</p>
+                <div className="space-y-2">
+                  {subscriptionStatus.lastPayment.bankReference && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/70">Transaction ID:</span>
+                      <span className="font-mono text-white font-medium">
+                        {subscriptionStatus.lastPayment.bankReference}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/70">Amount:</span>
+                    <span className="font-bold text-white">{subscriptionStatus.lastPayment.amount} MAD</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/70">Transaction Date:</span>
+                    <span className="text-white">{new Date(subscriptionStatus.lastPayment.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm pt-2 border-t border-white/20">
+                    <span className="text-white/70">Status:</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      subscriptionStatus.lastPayment.verified 
+                        ? 'bg-green-500/70 text-white' 
+                        : 'bg-yellow-500/70 text-white'
+                    }`}>
+                      {subscriptionStatus.lastPayment.verified ? '✓ Verified' : '⏳ Pending Verification'}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}

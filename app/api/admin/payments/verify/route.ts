@@ -205,12 +205,18 @@ export async function POST(req: NextRequest) {
       });
 
     } else {
-      // Reject payment
-      await prisma.payment.update({
-        where: { id: paymentId },
+      // Reject payment - delete it so user can upload new receipt
+      await prisma.payment.delete({
+        where: { id: paymentId }
+      });
+
+      // Update subscription back to "Not Paid" status
+      await prisma.subscription.update({
+        where: { id: payment.subscriptionId },
         data: {
-          verified: false,
-          notificationSent: true
+          status: 'Not Paid',
+          expirationDate: null,
+          paymentDate: null
         }
       });
 

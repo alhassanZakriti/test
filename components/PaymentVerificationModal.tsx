@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Upload, CheckCircle, AlertCircle, Loader2, Check, XCircle } from 'lucide-react';
 import Image from 'next/image';
+import { createWorker } from 'tesseract.js';
 
 interface SubscriptionStatus {
   needsPayment: boolean;
@@ -34,10 +35,12 @@ export default function PaymentVerificationModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<any>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -46,6 +49,8 @@ export default function PaymentVerificationModal({
       setError(null);
       setSuccess(false);
       setExtractedData(null);
+      setValidationResult(null);
+      setProcessing(false);
     }
   }, [isOpen]);
 
@@ -109,6 +114,9 @@ export default function PaymentVerificationModal({
         // Compress image before preview
         const compressedImage = await compressImage(file);
         setPreviewUrl(compressedImage);
+        
+        // Start OCR processing immediately
+        await processReceiptOCR(compressedImage);
       } catch (err) {
         setError('Failed to process image');
         console.error('Image compression error:', err);
@@ -116,23 +124,221 @@ export default function PaymentVerificationModal({
     }
   };
 
+  const extractReceiptInfo = (text: string) => {
+    console.log('🔍 RAW OCR TEXT:', text);
+    console.log('=====================================');
+    
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    let motif: string | null = null;
+    let amount: number | null = null;
+    let date: string | null = null;
+    let senderName: string | null = null;
+
+    // Extract MODXXXXXXXX pattern (French: next to "MOTIF")
+    const modPatterns = [
+      /MOTIF[:\s]*[:]?\s*(MOD[A-Z0-9]{8})/gi,      // MOTIF: MODXXXXXXXX or MOTIF MODXXXXXXXX
+      /MOTIF[:\s]+([A-Z0-9]{11})/gi,                // MOTIF: followed by 11 chars
+      /MOD[A-Z0-9]{8}/gi,                           // Direct MODXXXXXXXX
+    ];
+    
+    for (const pattern of modPatterns) {
+      const matches = text.match(pattern);
+      if (matches) {
+        console.log('✓ Motif pattern matched:', matches);
+        // Extract the MOD part
+        const modMatch = matches[0].match(/MOD[A-Z0-9]{8}/i);
+        if (modMatch) {
+          motif = modMatch[0].toUpperCase();
+          console.log('✓ Extracted MOTIF:', motif);
+          break;
+        }
+      }
+    }
+
+    if (!motif) {
+      console.log('✗ No MOTIF found');
+    }
+
+    // Extract amount (French: next to "MONTANT" and before "Dirhams")
+    const amountPatterns = [
+      /MONTANT[:\s]*[:]?\s*(\d{1,6})[.,]?(\d{0,2})\s*(?:DIRHAMS?|MAD|DH)/gi,  // MONTANT: XXX Dirhams
+      /MONTANT[:\s]*[:]?\s*(\d{1,6})[.,]?(\d{0,2})/gi,                        // MONTANT: XXX
+      /(\d{1,6})[.,](\d{2})\s*(?:DIRHAMS?|MAD|DH)/gi,                         // XXX.XX Dirhams
+      /(\d{1,6})\s*(?:DIRHAMS?|MAD|DH)/gi                                      // XXX Dirhams
+    ];
+    
+    for (const pattern of amountPatterns) {
+      const matches = text.match(pattern);
+      if (matches) {
+        console.log('✓ Amount pattern matched:', matches);
+        for (const match of matches) {
+          const numberMatch = match.match(/(\d{1,6})[.,]?(\d{0,2})/);
+          if (numberMatch) {
+            const amountStr = numberMatch[1] + (numberMatch[2] && numberMatch[2] !== '' ? '.' + numberMatch[2] : '.00');
+            const parsedAmount = parseFloat(amountStr);
+            if (parsedAmount >= 50 && parsedAmount <= 10000) {
+              amount = parsedAmount;
+              console.log('✓ Extracted AMOUNT:', amount, 'MAD');
+              break;
+            }
+          }
+        }
+      }
+      if (amount) break;
+    }
+
+    if (!amount) {
+      console.log('✗ No valid AMOUNT found');
+    }
+
+    // Extract date (French format: DD-MM-YYYY)
+    const datePatterns = [
+      /DATE[:\s]*[:]?\s*(\d{2})[-\/](\d{2})[-\/](\d{4})/gi,  // DATE: DD-MM-YYYY or DD/MM/YYYY
+      /(\d{2})[-](\d{2})[-](\d{4})/g,                        // DD-MM-YYYY
+      /(\d{2})[\/](\d{2})[\/](\d{4})/g,                      // DD/MM/YYYY
+    ];
+    
+    for (const pattern of datePatterns) {
+      const matches = text.match(pattern);
+      if (matches) {
+        console.log('✓ Date pattern matched:', matches);
+        for (const match of matches) {
+          const dateMatch = match.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
+          if (dateMatch) {
+            const day = parseInt(dateMatch[1]);
+            const month = parseInt(dateMatch[2]);
+            const year = parseInt(dateMatch[3]);
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+              date = `${year}-${dateMatch[2]}-${dateMatch[1]}`; // Store as YYYY-MM-DD
+              console.log('✓ Extracted DATE:', dateMatch[1] + '-' + dateMatch[2] + '-' + dateMatch[3], '(DD-MM-YYYY)');
+              break;
+            }
+          }
+        }
+      }
+      if (date) break;
+    }
+
+    if (!date) {
+      console.log('✗ No valid DATE found');
+    }
+
+    console.log('=====================================');
+    console.log('📊 EXTRACTION SUMMARY:');
+    console.log('  MOTIF:', motif || 'NOT FOUND');
+    console.log('  AMOUNT:', amount ? `${amount} MAD` : 'NOT FOUND');
+    console.log('  DATE:', date || 'NOT FOUND');
+    console.log('=====================================');
+
+    return { motif, amount, date, senderName, rawText: text };
+  };
+
+  const processReceiptOCR = async (imageData: string) => {
+    setProcessing(true);
+    setUploadProgress('Processing receipt...');
+    setExtractedData(null);
+    setValidationResult(null);
+
+    console.log('🚀 Starting OCR processing...');
+
+    try {
+      console.log('📝 Initializing Tesseract worker (French language support)...');
+      const worker = await createWorker('fra'); // Use French language for better OCR
+      
+      console.log('🔄 Recognizing text from image...');
+      const { data: { text } } = await worker.recognize(imageData);
+      await worker.terminate();
+      console.log('✅ OCR recognition complete');
+
+      const extracted = extractReceiptInfo(text);
+      setExtractedData(extracted);
+
+      // Validate extracted data
+      const expectedMotif = subscriptionStatus?.paymentAlias || '';
+      const expectedAmount = 150; // Default subscription price
+
+      console.log('🔍 VALIDATION CHECK:');
+      console.log('  Expected MOTIF:', expectedMotif);
+      console.log('  Extracted MOTIF:', extracted.motif);
+      console.log('  Expected AMOUNT:', expectedAmount, 'MAD');
+      console.log('  Extracted AMOUNT:', extracted.amount, 'MAD');
+
+      // Validate date - must be within last month (30 days) and not in future
+      let isDateMatch = false;
+      let dateValidationReason = '';
+      if (extracted.date) {
+        const transactionDate = new Date(extracted.date);
+        const now = new Date();
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        
+        if (transactionDate > now) {
+          isDateMatch = false;
+          dateValidationReason = 'Date is in the future';
+        } else if (transactionDate < oneMonthAgo) {
+          isDateMatch = false;
+          dateValidationReason = 'Date is older than 1 month';
+        } else {
+          isDateMatch = true;
+          dateValidationReason = 'Date is valid (within last month)';
+        }
+        
+        console.log('  Extracted DATE:', extracted.date);
+        console.log('  Date Range: ', oneMonthAgo.toLocaleDateString(), ' to ', now.toLocaleDateString());
+        console.log('  Date validation:', dateValidationReason);
+        console.log('  Date is valid:', isDateMatch);
+      } else {
+        console.log('  No DATE extracted');
+      }
+
+      const isMotifMatch = extracted.motif === expectedMotif;
+      const isAmountMatch = extracted.amount ? Math.abs(extracted.amount - expectedAmount) <= 10 : false;
+      const confidenceScore = (isMotifMatch ? 40 : 0) + (isAmountMatch ? 35 : 0) + (isDateMatch ? 25 : 0);
+
+      console.log('✓ Motif Match:', isMotifMatch);
+      console.log('✓ Amount Match:', isAmountMatch);
+      console.log('✓ Date Match:', isDateMatch);
+      console.log('📊 Confidence Score:', confidenceScore + '%');
+
+      setValidationResult({
+        motifMatch: isMotifMatch,
+        amountMatch: isAmountMatch,
+        dateMatch: isDateMatch,
+        confidenceScore,
+        expectedMotif,
+        expectedAmount
+      });
+
+      setUploadProgress('');
+      console.log('✅ OCR processing and validation complete');
+    } catch (err) {
+      console.error('❌ OCR processing error:', err);
+      setError('Failed to extract information from receipt. Please try again with a clearer image.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleUpload = async () => {
-    if (!selectedFile || !previewUrl) return;
+    if (!selectedFile || !previewUrl || !extractedData) {
+      setError('Please wait for receipt processing to complete');
+      return;
+    }
 
     setUploading(true);
     setError(null);
-    setUploadProgress('Preparing image...');
+    setUploadProgress('Uploading receipt...');
 
     try {
-      setUploadProgress('Uploading receipt...');
-      
       const response = await fetch('/api/user/upload-receipt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          receiptImage: previewUrl
+          receiptImage: previewUrl,
+          extractedData: extractedData
         })
       });
 
@@ -144,7 +350,6 @@ export default function PaymentVerificationModal({
 
       setUploadProgress('');
       setSuccess(true);
-      setExtractedData(data);
       
       // Notify parent component
       setTimeout(() => {
@@ -325,12 +530,148 @@ export default function PaymentVerificationModal({
                     onClick={() => {
                       setSelectedFile(null);
                       setPreviewUrl(null);
+                      setExtractedData(null);
+                      setValidationResult(null);
                     }}
                     className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
-                    disabled={uploading}
+                    disabled={uploading || processing}
                   >
                     Remove and select different image
                   </button>
+
+                  {/* Processing Indicator */}
+                  {processing && (
+                    <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-700 dark:text-blue-300">
+                        Extracting information from receipt...
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Extracted Information Display */}
+                  {extractedData && !processing && (
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        Extracted Information
+                      </h3>
+                      
+                      <div className="space-y-2">
+                        {/* Payment Reference */}
+                        <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                          <div className="flex-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Payment Reference:</span>
+                            <p className="text-sm font-mono font-medium text-gray-900 dark:text-white">
+                              {extractedData.motif || 'Not found'}
+                            </p>
+                          </div>
+                          {validationResult && (
+                            <div className="flex items-center gap-1">
+                              {validationResult.motifMatch ? (
+                                <>
+                                  <Check className="w-4 h-4 text-green-600" />
+                                  <span className="text-xs text-green-600 font-medium">Match</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-4 h-4 text-red-600" />
+                                  <span className="text-xs text-red-600 font-medium">No Match</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Amount */}
+                        <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                          <div className="flex-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Amount:</span>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {extractedData.amount ? `${extractedData.amount} MAD` : 'Not found'}
+                            </p>
+                          </div>
+                          {validationResult && (
+                            <div className="flex items-center gap-1">
+                              {validationResult.amountMatch ? (
+                                <>
+                                  <Check className="w-4 h-4 text-green-600" />
+                                  <span className="text-xs text-green-600 font-medium">Match</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-4 h-4 text-red-600" />
+                                  <span className="text-xs text-red-600 font-medium">No Match</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Date */}
+                        <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                          <div className="flex-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Transaction Date:</span>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {extractedData.date ? new Date(extractedData.date).toLocaleDateString() : 'Not found'}
+                            </p>
+                          </div>
+                          {validationResult && extractedData.date && (
+                            <div className="flex items-center gap-1">
+                              {validationResult.dateMatch ? (
+                                <>
+                                  <Check className="w-4 h-4 text-green-600" />
+                                  <span className="text-xs text-green-600 font-medium">Valid</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-4 h-4 text-red-600" />
+                                  <span className="text-xs text-red-600 font-medium">Invalid</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Validation Summary */}
+                        {validationResult && (
+                          <div className={`mt-3 p-3 rounded-lg ${
+                            validationResult.confidenceScore >= 80 
+                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                              : validationResult.confidenceScore >= 50
+                              ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800'
+                              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                          }`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Validation Confidence:
+                              </span>
+                              <span className={`text-sm font-bold ${
+                                validationResult.confidenceScore >= 80 
+                                  ? 'text-green-700 dark:text-green-300'
+                                  : validationResult.confidenceScore >= 50
+                                  ? 'text-orange-700 dark:text-orange-300'
+                                  : 'text-red-700 dark:text-red-300'
+                              }`}>
+                                {validationResult.confidenceScore}%
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {validationResult.confidenceScore >= 80 && (
+                                <p>✓ All information matches expected values and date is within last month</p>
+                              )}
+                              {validationResult.confidenceScore >= 50 && validationResult.confidenceScore < 80 && (
+                                <p>⚠️ Some information doesn't match or date is invalid (too old or future date). Admin will verify manually.</p>
+                              )}
+                              {validationResult.confidenceScore < 50 && (
+                                <p>✗ Multiple mismatches detected or invalid date. Please ensure you uploaded the correct and recent receipt (within last month).</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
