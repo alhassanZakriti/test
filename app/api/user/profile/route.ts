@@ -22,7 +22,6 @@ export async function GET(request: Request) {
         name: true,
         email: true,
         phoneNumber: true,
-        paymentAlias: true,
         preferredLanguage: true,
         createdAt: true,
       },
@@ -104,7 +103,6 @@ export async function PUT(request: Request) {
         name: true,
         email: true,
         phoneNumber: true,
-        paymentAlias: true,
         preferredLanguage: true,
       },
     });

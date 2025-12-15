@@ -29,8 +29,8 @@ async function processReceiptOCR(paymentId: string, receiptImage: string, userEm
       }
     });
 
-    if (!payment) {
-      console.error(`Payment ${paymentId} not found`);
+    if (!payment || !payment.subscription) {
+      console.error(`Payment ${paymentId} not found or has no subscription`);
       return;
     }
 
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
       subscription = await prisma.subscription.create({
         data: {
           userId: user.id,
-          uniqueCode: user.paymentAlias || 'UNKNOWN',
+          uniqueCode: 'UNKNOWN',
           status: 'Not Paid',
           plan: 'Basic',
           price: 150
@@ -262,7 +262,7 @@ export async function POST(req: NextRequest) {
     // Use client-extracted data if available, otherwise defaults
     const paymentAmount = extractedData?.amount || 0;
     const transactionDate = extractedData?.date ? new Date(extractedData.date) : new Date();
-    const bankRef = extractedData?.motif || user.paymentAlias || 'UNKNOWN';
+    const bankRef = extractedData?.motif || 'UNKNOWN';
     const sender = extractedData?.senderName || user.name || 'Unknown';
 
     console.log('💾 Saving payment with extracted data:');

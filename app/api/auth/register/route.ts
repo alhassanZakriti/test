@@ -37,9 +37,6 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate unique payment alias
-    const paymentAlias = await generatePaymentAlias();
-
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -47,11 +44,10 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         role: 'user',
-        paymentAlias,
       },
     });
 
-    console.log(`✅ Created user with payment alias: ${paymentAlias}`);
+    console.log(`✅ Created user: ${user.email}`);
 
     return NextResponse.json(
       {
@@ -60,7 +56,6 @@ export async function POST(request: Request) {
           id: user.id,
           name: user.name,
           email: user.email,
-          paymentAlias: user.paymentAlias,
         },
       },
       { status: 201 }

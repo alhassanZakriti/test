@@ -28,6 +28,7 @@ interface SubscriptionStatus {
     amount: number;
     date: string;
     verified: boolean;
+    bankReference?: string | null;
   };
 }
 

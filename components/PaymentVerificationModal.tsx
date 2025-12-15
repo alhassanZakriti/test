@@ -661,7 +661,7 @@ export default function PaymentVerificationModal({
                                 <p>✓ All information matches expected values and date is within last month</p>
                               )}
                               {validationResult.confidenceScore >= 50 && validationResult.confidenceScore < 80 && (
-                                <p>⚠️ Some information doesn't match or date is invalid (too old or future date). Admin will verify manually.</p>
+                                <p>⚠️ Some information doesn&apos;t match or date is invalid (too old or future date). Admin will verify manually.</p>
                               )}
                               {validationResult.confidenceScore < 50 && (
                                 <p>✗ Multiple mismatches detected or invalid date. Please ensure you uploaded the correct and recent receipt (within last month).</p>

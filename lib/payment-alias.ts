@@ -6,23 +6,23 @@ import prisma from './prisma';
  */
 export async function generatePaymentAlias(): Promise<string> {
   try {
-    // Get the count of existing users to determine the next sequence number
-    const userCount = await prisma.user.count();
+    // Get the count of existing projects to determine the next sequence number
+    const projectCount = await prisma.project.count();
     
     // Start from 1 and increment
-    let sequenceNumber = userCount + 1;
+    let sequenceNumber = projectCount + 1;
     let alias = `MOD${sequenceNumber.toString().padStart(8, '0')}`;
     
-    // Check if alias already exists (in case of gaps in sequence)
-    let existingUser = await prisma.user.findUnique({
+    // Check if alias already exists in projects (in case of gaps in sequence)
+    let existingProject = await prisma.project.findUnique({
       where: { paymentAlias: alias },
     });
     
     // If alias exists, keep incrementing until we find an unused one
-    while (existingUser) {
+    while (existingProject) {
       sequenceNumber++;
       alias = `MOD${sequenceNumber.toString().padStart(8, '0')}`;
-      existingUser = await prisma.user.findUnique({
+      existingProject = await prisma.project.findUnique({
         where: { paymentAlias: alias },
       });
     }
@@ -37,25 +37,25 @@ export async function generatePaymentAlias(): Promise<string> {
 }
 
 /**
- * Assign payment alias to existing users who don't have one
+ * Assign payment alias to existing projects who don't have one
  */
 export async function assignMissingPaymentAliases(): Promise<number> {
   try {
-    const usersWithoutAlias = await prisma.user.findMany({
+    const projectsWithoutAlias = await prisma.project.findMany({
       where: { paymentAlias: null },
       select: { id: true },
     });
 
     let assignedCount = 0;
 
-    for (const user of usersWithoutAlias) {
+    for (const project of projectsWithoutAlias) {
       const alias = await generatePaymentAlias();
-      await prisma.user.update({
-        where: { id: user.id },
+      await prisma.project.update({
+        where: { id: project.id },
         data: { paymentAlias: alias },
       });
       assignedCount++;
-      console.log(`✅ Assigned alias ${alias} to user ${user.id}`);
+      console.log(`✅ Assigned alias ${alias} to project ${project.id}`);
     }
 
     return assignedCount;

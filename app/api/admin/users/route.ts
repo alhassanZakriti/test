@@ -102,7 +102,6 @@ export async function GET(req: NextRequest) {
         lastName: user.lastName,
         email: user.email,
         phoneNumber: user.phoneNumber,
-        paymentAlias: user.paymentAlias,
         projectCount: user.projects.length,
         subscription: subscription ? {
           id: subscription.id,

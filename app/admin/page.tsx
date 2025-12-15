@@ -47,19 +47,17 @@ export default function AdminDashboard() {
 
   const updateProjectStatus = async (projectId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/admin/projects/${projectId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
+      const response = await fetch('/api/admin/projects/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, status: newStatus }),
       });
-
+      
       if (response.ok) {
-        fetchProjects();
+        await fetchProjects();
       }
     } catch (error) {
-      console.error('Error updating project:', error);
+      console.error('Error updating project status:', error);
     }
   };
 
@@ -77,14 +75,21 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
               <span className="gradient-text">{t('nav.admin')}</span> Dashboard
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">{t('adminProjects.viewAllProjects')}</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 lg:gap-3">
+            <a
+              href="/admin/users"
+              className="px-3 py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center justify-center space-x-2 text-sm lg:text-base"
+            >
+              <FiUsers size={18} className="lg:w-5 lg:h-5" />
+              <span>Users</span>
+            </a>
             <a
               href="/admin/users"
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center space-x-2"
@@ -94,31 +99,40 @@ export default function AdminDashboard() {
             </a>
             <a
               href="/admin/payments"
-              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center space-x-2"
+              className="px-3 py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center justify-center space-x-2 text-sm lg:text-base"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
-              <span>Payments</span>
+              <span className="hidden sm:inline">Subscriptions</span>
+              <span className="sm:hidden">Subs</span>
+            </a>
+            <a
+              href="/admin/project-payments"
+              className="px-3 py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center justify-center space-x-2 text-sm lg:text-base"
+            >
+              <FiCheckCircle size={18} className="lg:w-5 lg:h-5" />
+              <span className="hidden sm:inline">Project Payments</span>
+              <span className="sm:hidden">Payments</span>
             </a>
             <a
               href="/admin/projects"
-              className="px-6 py-3 bg-gradient-modual text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center space-x-2"
+              className="px-3 py-2 lg:px-6 lg:py-3 bg-gradient-modual text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center justify-center space-x-2 text-sm lg:text-base"
             >
-              <FiFolder size={20} />
-              <span>{t('adminProjects.viewProject')}</span>
+              <FiFolder size={18} className="lg:w-5 lg:h-5" />
+              <span className="hidden sm:inline">{t('adminProjects.viewProject')}</span>
+              <span className="sm:hidden">Projects</span>
             </a>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6"
-        >
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">{t('admin.totalProjects')}</p>
@@ -432,21 +446,15 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <select
-                        value={project.status}
-                        onChange={(e) => updateProjectStatus(project.id, e.target.value)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${
-                          project.status === 'Nieuw'
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          project.status === 'New'
                             ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-                            : project.status === 'In Behandeling'
+                            : project.status === 'In Progress'
                             ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
                             : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                        }`}
-                      >
-                        <option value="New">{t('admin.new')}</option>
-                        <option value="In Progress">{t('admin.inProgress')}</option>
-                        <option value="Completed">{t('admin.completed')}</option>
-                      </select>
+                        }`}>
+                        {project.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {new Date(project.createdAt).toLocaleDateString('nl-NL')}

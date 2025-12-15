@@ -56,8 +56,7 @@ export async function GET(req: NextRequest) {
         status: 'No Subscription',
         daysRemaining: 0,
         expirationDate: null,
-        lastPayment: null,
-        paymentAlias: user.paymentAlias
+        lastPayment: null
       });
     }
 
@@ -77,7 +76,7 @@ export async function GET(req: NextRequest) {
           date: lastPayment.transactionDate,
           verified: lastPayment.verified
         } : null,
-        paymentAlias: user.paymentAlias || subscription.uniqueCode
+        paymentAlias: subscription.uniqueCode
       });
     }
 
@@ -97,7 +96,7 @@ export async function GET(req: NextRequest) {
           verified: lastPayment.verified,
           bankReference: lastPayment.bankReference
         },
-        paymentAlias: user.paymentAlias || subscription.uniqueCode
+        paymentAlias: subscription.uniqueCode
       });
     }
 
@@ -122,7 +121,7 @@ export async function GET(req: NextRequest) {
         verified: lastPayment.verified,
         bankReference: lastPayment.bankReference
       } : null,
-      paymentAlias: user.paymentAlias || subscription.uniqueCode
+      paymentAlias: subscription.uniqueCode
     });
 
   } catch (error) {

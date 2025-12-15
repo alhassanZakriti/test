@@ -13,14 +13,13 @@ export async function GET(request: Request) {
 
     const userId = (session.user as any).id;
 
-    // Fetch user data including payment alias
+    // Fetch user data
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         name: true,
         email: true,
-        paymentAlias: true,
         createdAt: true,
       },
     });

@@ -147,51 +147,55 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      // Update subscription
-      await prisma.subscription.update({
-        where: { id: payment.subscriptionId },
-        data: {
-          status: 'Paid',
-          paymentDate: payment.transactionDate,
-          expirationDate: expirationDate
-        }
-      });
+      // Update subscription if exists
+      if (payment.subscriptionId) {
+        await prisma.subscription.update({
+          where: { id: payment.subscriptionId },
+          data: {
+            status: 'Paid',
+            paymentDate: payment.transactionDate,
+            expirationDate: expirationDate
+          }
+        });
+      }
 
       // Send confirmation email to user
-      const userName = payment.subscription.user.name || 'User';
-      const userEmail = payment.subscription.user.email;
+      if (payment.subscription) {
+        const userName = payment.subscription.user.name || 'User';
+        const userEmail = payment.subscription.user.email;
       
-      try {
-        await sendEmail({
-          to: userEmail,
-          subject: '✅ Payment Approved - Subscription Activated',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #10b981;">Payment Approved!</h2>
-              <p>Dear ${userName},</p>
-              <p>Great news! Your payment has been verified and approved by our team.</p>
-              
-              <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
-                <h3 style="margin-top: 0; color: #059669;">Subscription Details:</h3>
-                <p style="margin: 5px 0;"><strong>Amount:</strong> ${payment.amount} MAD</p>
-                <p style="margin: 5px 0;"><strong>Payment Reference:</strong> ${payment.bankReference}</p>
-                <p style="margin: 5px 0;"><strong>Valid Until:</strong> ${expirationDate.toLocaleDateString()}</p>
+        try {
+          await sendEmail({
+            to: userEmail,
+            subject: '✅ Payment Approved - Subscription Activated',
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #10b981;">Payment Approved!</h2>
+                <p>Dear ${userName},</p>
+                <p>Great news! Your payment has been verified and approved by our team.</p>
+                
+                <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #059669;">Subscription Details:</h3>
+                  <p style="margin: 5px 0;"><strong>Amount:</strong> ${payment.amount} MAD</p>
+                  <p style="margin: 5px 0;"><strong>Payment Reference:</strong> ${payment.bankReference}</p>
+                  <p style="margin: 5px 0;"><strong>Valid Until:</strong> ${expirationDate.toLocaleDateString()}</p>
+                </div>
+                
+                <p>Your subscription is now active and you have full access to all features.</p>
+                <p>Thank you for using our service!</p>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 12px;">
+                  If you have any questions, please contact our support team.
+                </p>
               </div>
-              
-              <p>Your subscription is now active and you have full access to all features.</p>
-              <p>Thank you for using our service!</p>
-              
-              <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; font-size: 12px;">
-                If you have any questions, please contact our support team.
-              </p>
-            </div>
-          `
-        });
-        console.log(`Approval email sent to: ${userEmail}`);
-      } catch (emailError) {
-        console.error('Failed to send approval email:', emailError);
-        // Continue even if email fails
+            `
+          });
+          console.log(`Approval email sent to: ${userEmail}`);
+        } catch (emailError) {
+          console.error('Failed to send approval email:', emailError);
+          // Continue even if email fails
+        }
       }
 
       return NextResponse.json({
@@ -210,19 +214,22 @@ export async function POST(req: NextRequest) {
         where: { id: paymentId }
       });
 
-      // Update subscription back to "Not Paid" status
-      await prisma.subscription.update({
-        where: { id: payment.subscriptionId },
-        data: {
-          status: 'Not Paid',
-          expirationDate: null,
-          paymentDate: null
-        }
-      });
+      // Update subscription back to "Not Paid" status if exists
+      if (payment.subscriptionId) {
+        await prisma.subscription.update({
+          where: { id: payment.subscriptionId },
+          data: {
+            status: 'Not Paid',
+            expirationDate: null,
+            paymentDate: null
+          }
+        });
+      }
 
       // Send rejection email to user
-      const userName = payment.subscription.user.name || 'User';
-      const userEmail = payment.subscription.user.email;
+      if (payment.subscription) {
+        const userName = payment.subscription.user.name || 'User';
+        const userEmail = payment.subscription.user.email;
       
       try {
         await sendEmail({
@@ -261,6 +268,7 @@ export async function POST(req: NextRequest) {
       } catch (emailError) {
         console.error('Failed to send rejection email:', emailError);
         // Continue even if email fails
+      }
       }
 
       return NextResponse.json({
