@@ -47,7 +47,6 @@ model User {
   image            String?
   phoneNumber      String?
   role             String    @default("user") // "user" or "admin"
-  paymentAlias     String?   @unique // MODXXXXXXXX format for payment tracking
   preferredLanguage String   @default("en") // "en", "nl", "fr", "ar"
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

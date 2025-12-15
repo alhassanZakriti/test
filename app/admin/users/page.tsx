@@ -12,7 +12,6 @@ interface UserWithStatus {
   lastName: string | null;
   email: string;
   phoneNumber: string | null;
-  paymentAlias: string | null;
   projectCount: number;
   subscription: {
     id: string;
@@ -110,8 +109,7 @@ export default function AdminUsersPage() {
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.paymentAlias?.toLowerCase().includes(searchTerm.toLowerCase());
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesFilter = 
       filterStatus === 'all' || user.statusColor === filterStatus;
@@ -370,9 +368,9 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <code className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                        {user.paymentAlias || 'N/A'}
-                      </code>
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {user.projectCount || 0} projects
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(user.statusColor, user.statusText)}
