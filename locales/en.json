@@ -8,7 +8,8 @@
     "logout": "Logout",
     "getStarted": "Get Started",
     "pricing": "Pricing",
-    "profile": "Profile"
+    "profile": "Profile",
+    "signedInAs": "Signed in as"
   },
   "home": {
     "heroTitle": "Let Modual Build Your Dream Website",

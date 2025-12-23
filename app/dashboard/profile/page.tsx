@@ -17,26 +17,10 @@ interface UserProfile {
   role?: string;
 }
 
-interface SubscriptionStatus {
-  needsPayment: boolean;
-  status: string;
-  daysRemaining: number;
-  expirationDate: string | null;
-  plan?: string;
-  price?: number;
-  lastPayment?: {
-    amount: number;
-    date: string;
-    verified: boolean;
-    bankReference?: string | null;
-  };
-}
-
 export default function ProfilePage() {
   const { data: session } = useSession();
   const { t, locale, setLocale } = useLanguage();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -52,7 +36,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
-    fetchSubscriptionStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -79,21 +62,7 @@ export default function ProfilePage() {
   };
 
   const fetchSubscriptionStatus = async () => {
-    try {
-      // Don't fetch subscription status for admins
-      if (profile?.role === 'admin') {
-        return;
-      }
-      
-      const response = await fetch('/api/user/subscription-status');
-      const data = await response.json();
-      
-      if (response.ok) {
-        setSubscriptionStatus(data);
-      }
-    } catch (error) {
-      console.error('Error fetching subscription status:', error);
-    }
+    // Subscription removed - now only project-based payments
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,130 +133,7 @@ export default function ProfilePage() {
         </p>
       </motion.div>
 
-      {/* Payment Alias Card - Only show for regular users, not admins */}
-      {profile?.paymentAlias && profile?.role !== 'admin' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8 bg-gradient-to-r from-modual-pink via-modual-purple to-modual-blue p-6 rounded-lg shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="text-white font-semibold text-lg mb-1">💳 Your Payment ID</h3>
-              <p className="text-white/80 text-sm mb-3">
-                Use this ID when making payments. This ID is read-only and cannot be changed.
-              </p>
-              <div className="flex items-center space-x-3">
-                <code className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-mono text-lg font-bold">
-                  {profile.paymentAlias}
-                </code>
-                <button
-                  onClick={copyPaymentAlias}
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-lg transition-all"
-                  title="Copy to clipboard"
-                >
-                  {copied ? <FiCheck size={20} /> : <FiCopy size={20} />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Subscription Status Card */}
-      {subscriptionStatus && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className={`mb-8 p-6 rounded-lg shadow-lg ${
-            subscriptionStatus.status === 'Paid'
-              ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-              : subscriptionStatus.status === 'Pending Verification'
-              ? 'bg-gradient-to-r from-orange-500 to-amber-600'
-              : 'bg-gradient-to-r from-red-500 to-rose-600'
-          }`}
-        >
-          <div className="text-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-xl">📅 Subscription Status</h3>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                subscriptionStatus.status === 'Paid'
-                  ? 'bg-white/30'
-                  : 'bg-white/40'
-              }`}>
-                {subscriptionStatus.status}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                <p className="text-white/70 text-sm">Plan</p>
-                <p className="text-white font-semibold text-lg">
-                  {subscriptionStatus.plan || 'Basic'}
-                </p>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                <p className="text-white/70 text-sm">Days Remaining</p>
-                <p className="text-white font-semibold text-lg">
-                  {subscriptionStatus.daysRemaining > 0 
-                    ? `${subscriptionStatus.daysRemaining} days`
-                    : 'Expired'}
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                <p className="text-white/70 text-sm">Next Payment</p>
-                <p className="text-white font-semibold text-lg">
-                  {subscriptionStatus.price || 150} MAD
-                </p>
-              </div>
-            </div>
-
-            {subscriptionStatus.expirationDate && (
-              <p className="text-white/80 text-sm">
-                Expires on: {new Date(subscriptionStatus.expirationDate).toLocaleDateString()}
-              </p>
-            )}
-
-            {subscriptionStatus.lastPayment && (
-              <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <p className="text-white/70 text-sm mb-3 font-semibold">Last Payment Details</p>
-                <div className="space-y-2">
-                  {subscriptionStatus.lastPayment.bankReference && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/70">Transaction ID:</span>
-                      <span className="font-mono text-white font-medium">
-                        {subscriptionStatus.lastPayment.bankReference}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/70">Amount:</span>
-                    <span className="font-bold text-white">{subscriptionStatus.lastPayment.amount} MAD</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/70">Transaction Date:</span>
-                    <span className="text-white">{new Date(subscriptionStatus.lastPayment.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm pt-2 border-t border-white/20">
-                    <span className="text-white/70">Status:</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      subscriptionStatus.lastPayment.verified 
-                        ? 'bg-green-500/70 text-white' 
-                        : 'bg-yellow-500/70 text-white'
-                    }`}>
-                      {subscriptionStatus.lastPayment.verified ? '✓ Verified' : '⏳ Pending Verification'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
+     
 
       {/* Profile Form */}
       <motion.div
