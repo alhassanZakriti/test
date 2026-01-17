@@ -30,7 +30,9 @@
     "step3Title": "Partagez votre vision",
     "step3Desc": "Téléchargez des fichiers et exprimez vos souhaits",
     "step4Title": "Terminé!",
-    "step4Desc": "Votre site web est généré et prêt"
+    "step4Desc": "Votre site web est généré et prêt",
+    "contactWhatsApp": "Contactez-nous sur WhatsApp"
+
   },
   "auth": {
     "welcomeBack": "Bon retour!",
