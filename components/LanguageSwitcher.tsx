@@ -5,10 +5,26 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { locales, localeNames, localeFlags, type Locale } from '@/lib/i18n';
 import { FiGlobe, FiCheck } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname, useRouter, useParams } from 'next/navigation';
 
 export default function LanguageSwitcher() {
   const { locale, setLocale } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const params = useParams();
+  const currentLang = params.lang as string;
+
+  const handleLanguageChange = (newLocale: Locale) => {
+    setLocale(newLocale);
+    setIsOpen(false);
+    
+    // Replace the current language in the URL with the new one
+    if (currentLang && pathname) {
+      const newPathname = pathname.replace(`/${currentLang}`, `/${newLocale}`);
+      router.push(newPathname);
+    }
+  };
 
   return (
     <div className="relative">
@@ -42,10 +58,7 @@ export default function LanguageSwitcher() {
               {locales.map((loc) => (
                 <button
                   key={loc}
-                  onClick={() => {
-                    setLocale(loc);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleLanguageChange(loc)}
                   className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
                     locale === loc ? 'bg-gray-50 dark:bg-gray-800' : ''
                   }`}

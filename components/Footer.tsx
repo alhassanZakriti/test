@@ -1,12 +1,16 @@
 
 
+'use client';
+
 import Link from 'next/link';
 import Logo from './Logo';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocalizedPath } from '@/lib/useLocalizedPath';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const { t } = useLanguage();
+  const { getPath } = useLocalizedPath();
 
   return (
     <footer className="bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-800 mt-auto transition-colors">
@@ -23,19 +27,19 @@ export default function Footer() {
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('footer.links')}</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="/" className="text-gray-600 dark:text-gray-400 hover:text-modual-purple dark:hover:text-modual-pink transition-colors">
+                <Link href={getPath("/")} className="text-gray-600 dark:text-gray-400 hover:text-modual-purple dark:hover:text-modual-pink transition-colors">
                   {t('footer.home')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/dashboard" className="text-gray-600 dark:text-gray-400 hover:text-modual-purple dark:hover:text-modual-pink transition-colors">
+                <Link href={getPath("/dashboard")} className="text-gray-600 dark:text-gray-400 hover:text-modual-purple dark:hover:text-modual-pink transition-colors">
                   {t('nav.dashboard')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/auth/registreren" className="text-gray-600 dark:text-gray-400 hover:text-modual-purple dark:hover:text-modual-pink transition-colors">
+                <Link href={getPath("/auth/registreren")} className="text-gray-600 dark:text-gray-400 hover:text-modual-purple dark:hover:text-modual-pink transition-colors">
                   {t('nav.register')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

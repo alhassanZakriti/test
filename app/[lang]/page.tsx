@@ -10,10 +10,17 @@ import ThemeSwitcher from '@/components/ThemeSwitcher';
 import Footer from '@/components/Footer';
 import { FiDatabase, FiUser } from 'react-icons/fi';
 import { FcBarChart } from 'react-icons/fc';
+import { useParams } from 'next/navigation';
 
 export default function Home() {
   const { data: session } = useSession();
   const { t } = useLanguage();
+  const params = useParams();
+  const lang = params.lang as string;
+
+  const getLangPrefix = (path: string) => {
+    return `/${lang}${path}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col transition-colors">
@@ -26,7 +33,7 @@ export default function Home() {
             <LanguageSwitcher />
             {session ? (
               <Link 
-                href="/dashboard" 
+                href={getLangPrefix("/dashboard")}
                 className="bg-gradient-modual text-white sm:px-6 px-3 py-2.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
                 <span className='hidden sm:block'>{t('nav.dashboard')}</span>
@@ -35,19 +42,19 @@ export default function Home() {
             ) : (
               <>
                 <Link 
-                  href="/auth/inloggen" 
+                  href={getLangPrefix("/auth/inloggen")}
                   className="md:block hidden text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink font-medium transition-colors"
                 >
                   {t('nav.login')}
                 </Link>
                 <Link 
-                  href="/auth/registreren" 
+                  href={getLangPrefix("/auth/registreren")}
                   className="hidden md:block bg-gradient-modual text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition-all transform hover:scale-105"
                 >
                   {t('nav.getStarted')}
                 </Link>
                 <Link 
-                  href="/auth/registreren" 
+                  href={getLangPrefix("/auth/registreren")}
                   className=" bg-gradient-modual text-white px-3 py-3 rounded-[100%] font-medium hover:opacity-90 transition-all transform hover:scale-105 md:hidden block"
                 >
                   <FiUser />
@@ -83,7 +90,7 @@ export default function Home() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
           >
             <Link 
-              href={session ? "/dashboard" : "/auth/registreren"} 
+              href={session ? getLangPrefix("/dashboard") : getLangPrefix("/auth/registreren")}
               className="bg-gradient-modual text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
               {t('home.startNow')}
@@ -196,7 +203,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.basicDescription')}</p>
                 <Link
-                  href="/pricing"
+                  href={getLangPrefix("/pricing")}
                   className="block w-full text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:border-modual-purple dark:hover:border-modual-pink hover:text-modual-purple dark:hover:text-modual-pink transition-all"
                 >
                   {t('pricing.learnMore')}
@@ -206,7 +213,7 @@ export default function Home() {
               {/* Pro Plan */}
               <div className="relative bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl ring-2 ring-modual-purple dark:ring-modual-pink transform scale-105">
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-modual text-white px-4 py-1 rounded-full text-[2rem] font-semibold">
+                  <span className="bg-gradient-modual text-white px-4 py-1 rounded-full text-[0.7rem] font-semibold">
                     {t('pricing.mostPopular')}
                   </span>
                 </div>
@@ -216,7 +223,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.proDescription')}</p>
                 <Link
-                  href="/pricing"
+                  href={getLangPrefix("/pricing")}
                   className="block w-full text-center bg-gradient-modual text-white py-3 rounded-lg font-semibold hover:opacity-90 transform hover:scale-105 transition-all"
                 >
                   {t('pricing.learnMore')}
@@ -231,7 +238,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.enterpriseDescription')}</p>
                 <Link
-                  href="/pricing"
+                  href={getLangPrefix("/pricing")}
                   className="block w-full text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:border-modual-purple dark:hover:border-modual-pink hover:text-modual-purple dark:hover:text-modual-pink transition-all"
                 >
                   {t('pricing.learnMore')}
@@ -240,7 +247,7 @@ export default function Home() {
             </div>
             <div className="text-center mt-8">
               <Link
-                href="/pricing"
+                href={getLangPrefix("/pricing")}
                 className="inline-block text-modual-purple dark:text-modual-pink font-semibold hover:underline"
               >
                 {t('pricing.title')} →
@@ -254,4 +261,3 @@ export default function Home() {
     </div>
   )
 }
-

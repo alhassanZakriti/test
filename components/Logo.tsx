@@ -1,6 +1,9 @@
 
+'use client';
+
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocalizedPath } from '@/lib/useLocalizedPath';
 
 interface LogoProps {
   className?: string;
@@ -10,11 +13,12 @@ interface LogoProps {
 
 export default function Logo({ className = '', width = 237, height = 94 }: LogoProps) {
   const { theme } = useTheme();
+  const { getPath } = useLocalizedPath();
   const isDark = theme === 'dark';
 
   
   return (
-    <Link href="/" className={`flex items-center ${className}`}>
+    <Link href={getPath("/")} className={`flex items-center ${className}`}>
       <svg 
         width={width} 
         height={height} 
