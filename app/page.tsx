@@ -199,7 +199,7 @@ export default function Home() {
                   href="/pricing"
                   className="block w-full text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-semibold hover:border-modual-purple dark:hover:border-modual-pink hover:text-modual-purple dark:hover:text-modual-pink transition-all"
                 >
-                  {t('pricing.getStarted')}
+                  {t('pricing.learnMore')}
                 </Link>
               </div>
 
@@ -219,7 +219,7 @@ export default function Home() {
                   href="/pricing"
                   className="block w-full text-center bg-gradient-modual text-white py-3 rounded-lg font-semibold hover:opacity-90 transform hover:scale-105 transition-all"
                 >
-                  {t('pricing.getStarted')}
+                  {t('pricing.learnMore')}
                 </Link>
               </div>
 
