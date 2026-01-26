@@ -38,7 +38,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/dashboard');
+      router.push(getPath('/dashboard'));
       router.refresh();
     } catch (error) {
       setError(t('auth.somethingWrong'));
@@ -84,7 +84,7 @@ export default function LoginPage() {
         throw new Error(result.error);
       }
 
-      router.push('/dashboard');
+      router.push(getPath('/dashboard'));
       router.refresh();
     } catch (error: any) {
       console.error('Google sign-in error:', error);
@@ -117,7 +117,7 @@ export default function LoginPage() {
     }
     
     try {
-      await signIn(provider, { callbackUrl: '/dashboard' });
+      await signIn(provider, { callbackUrl: getPath('/dashboard') });
     } catch (error) {
       setError(t('auth.somethingWrong'));
     }

@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
+  const params = useParams()
+  const lang = params.lang as string
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,21 +20,19 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Er is een fout opgetreden')
+      if (!result?.ok) {
+        setError(result?.error || 'Er is een fout opgetreden bij het inloggen')
         setLoading(false)
         return
       }
 
-      router.push('/dashboard')
+      router.push(`/${lang}/dashboard`)
     } catch (err) {
       setError('Er is een fout opgetreden bij het inloggen')
       setLoading(false)
