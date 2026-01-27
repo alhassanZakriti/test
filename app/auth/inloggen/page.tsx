@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
@@ -18,6 +18,20 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+const { data: session, status } = useSession();
+
+  useEffect(() => {
+    // Only redirect if on a different page (not on login page)
+    if (status === 'authenticated' && typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      // Don't redirect if we're already on a login page
+      if (!pathname.includes('/auth/') && !pathname.includes('/inloggen')) {
+        router.push('/en/dashboard');
+      }
+    }
+  }, [status, router]);
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -30,13 +44,16 @@ export default function LoginPage() {
         redirect: false,
       });
 
+      if(result?.ok)  {
+        window.location.reload();
+      }
+
       if (result?.error) {
         setError(t('auth.invalidCredentials'));
         setIsLoading(false);
         return;
       }
 
-      router.push('/dashboard');
       router.refresh();
     } catch (error) {
       setError(t('auth.somethingWrong'));
@@ -60,8 +77,8 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
+        uid: firebaseUser.uid,         
+        email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
         }),
@@ -70,27 +87,31 @@ export default function LoginPage() {
       if (!response.ok) {
         throw new Error('Failed to authenticate with backend');
       }
+      
 
       // Sign in with NextAuth using the email
       const result = await signIn('credentials', {
         redirect: false,
         email: firebaseUser.email,
-        password: firebaseUser.uid, // Use UID as password for Firebase users
+        password: firebaseUser.uid,
       });
 
-      if (result?.error) {
-        throw new Error(result.error);
+      console.log('🔵 Google signIn result:', result);
+
+      // Only reload if authentication was successful
+      if (result?.ok) {
+        console.log('✅ Google auth successful, reloading...');
+        window.location.reload();
+        return;
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      // If not ok, throw error to catch handler
+      console.log('❌ Google signIn failed:', result?.error);
+      throw new Error(result?.error || 'Authentication failed');
+
     } catch (error: any) {
+      setIsLoading(false);
       console.error('Google sign-in error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
       
       if (error.message === 'Popup was blocked. Please allow popups for this site.') {
         setError(t('auth.popupBlocked') || error.message);
@@ -115,7 +136,8 @@ export default function LoginPage() {
     }
     
     try {
-      await signIn(provider, { callbackUrl: '/dashboard' });
+      console.log("logged")
+      // await signIn(provider, { callbackUrl: '/en/dashboard' });
     } catch (error) {
       setError(t('auth.somethingWrong'));
     }
@@ -220,7 +242,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             {t('auth.noAccount')}{' '}
-            <Link href="/auth/registreren" className="text-modual-purple dark:text-modual-pink font-semibold hover:underline">
+            <Link href="/en/auth/registreren" className="text-modual-purple dark:text-modual-pink font-semibold hover:underline">
               {t('auth.registerHere')}
             </Link>
           </p>

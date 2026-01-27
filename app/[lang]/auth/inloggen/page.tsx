@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useLocalizedPath } from '@/lib/useLocalizedPath';
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { motion } from 'framer-motion';
@@ -14,11 +13,21 @@ import { motion } from 'framer-motion';
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { getPath } = useLocalizedPath();
+  const { update } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Extract language from URL pathname
+  const getLangFromPath = () => {
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      const match = pathname.match(/^\/([a-z]{2})\//);
+      return match ? match[1] : 'en';
+    }
+    return 'en';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +47,13 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(getPath('/dashboard'));
-      router.refresh();
+      if (result?.ok) {
+        // Refresh the session to ensure useSession() is updated
+        await update();
+        const lang = getLangFromPath();
+        // Use full page navigation to ensure session is properly loaded
+        window.location.href = `/${lang}/dashboard`;
+      }
     } catch (error) {
       setError(t('auth.somethingWrong'));
       setIsLoading(false);
@@ -84,8 +98,10 @@ export default function LoginPage() {
         throw new Error(result.error);
       }
 
-      router.push(getPath('/dashboard'));
-      router.refresh();
+      if (result?.ok) {
+        const lang = getLangFromPath();
+        router.push(`/${lang}/dashboard`);
+      }
     } catch (error: any) {
       console.error('Google sign-in error:', error);
       console.error('Error details:', {
@@ -117,9 +133,20 @@ export default function LoginPage() {
     }
     
     try {
-      await signIn(provider, { callbackUrl: getPath('/dashboard') });
+      const lang = getLangFromPath();
+      const callbackUrl = `/${lang}/dashboard`;
+      
+      const result = await signIn(provider, { 
+        redirect: false,
+        callbackUrl,
+      });
+      
+      if (result?.ok) {
+        router.push(callbackUrl);
+      }
     } catch (error) {
       setError(t('auth.somethingWrong'));
+      setIsLoading(false);
     }
   };
 
@@ -222,7 +249,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             {t('auth.noAccount')}{' '}
-            <Link href={getPath("/auth/registreren")} className="text-modual-purple dark:text-modual-pink font-semibold hover:underline">
+            <Link href={`/${getLangFromPath()}/auth/registreren`} className="text-modual-purple dark:text-modual-pink font-semibold hover:underline">
               {t('auth.registerHere')}
             </Link>
           </p>

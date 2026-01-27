@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -13,12 +13,14 @@ export default function DashboardLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const params = useParams();
+  const lang = (params.lang as string) || 'en';
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/inloggen');
+      router.push(`/${lang}/auth/inloggen`);
     }
-  }, [status, router]);
+  }, [status, router, lang]);
 
   if (status === 'loading') {
     return (

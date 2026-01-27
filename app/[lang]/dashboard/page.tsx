@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FiPlus, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiUser, FiMail, FiPhone, FiCopy, FiDollarSign, FiExternalLink } from 'react-icons/fi';
@@ -37,7 +38,10 @@ interface Project {
 
 export default function DashboardPage() {
   const { t } = useLanguage();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const params = useParams();
+  const lang = params.lang as string;
   const { getPath } = useLocalizedPath();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -46,6 +50,13 @@ export default function DashboardPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [shownToasts, setShownToasts] = useState<Set<string>>(new Set());
   const [previousProjects, setPreviousProjects] = useState<Project[]>([]);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push(`/${lang}/auth/inloggen`);
+    }
+  }, [status, router, lang]);
 
   useEffect(() => {
     fetchProjects();
@@ -63,7 +74,7 @@ export default function DashboardPage() {
         setShowPaymentModal(true);
       }
     }
-  }, [projects]);
+  }, [projects, showPaymentModal, isPaymentOverdue]);
 
   // Toast notifications for payment reminders
   useEffect(() => {
@@ -257,6 +268,20 @@ export default function DashboardPage() {
     const daysRemaining = getDaysRemaining(project.paymentDeadline);
     return daysRemaining !== null && daysRemaining < 0;
   };
+
+  // Show loading state while checking auth
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard if not authenticated
+  if (status === 'unauthenticated' || !session) {
+    return null;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">

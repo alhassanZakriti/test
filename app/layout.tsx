@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description: 'Create your own professional website easily with Modual',
 }
 
+
 export default function RootLayout({
   children,
 }: {

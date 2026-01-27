@@ -24,7 +24,7 @@ export default function RegisterPage() {
   // Redirect to dashboard if already authenticated
   useEffect(() => {
     if (session) {
-      router.push('/dashboard');
+      router.push('/en/dashboard');
     }
   }, [session, router]);
 
@@ -74,9 +74,9 @@ export default function RegisterPage() {
 
       if (result?.error) {
         // Registration successful but login failed
-        router.push('/auth/inloggen?registered=true');
+        router.push('/en/auth/inloggen?registered=true');
       } else {
-        router.push('/dashboard');
+        router.push('/en/dashboard');
         router.refresh();
       }
     } catch (error) {
@@ -123,7 +123,7 @@ export default function RegisterPage() {
         throw new Error(result.error);
       }
 
-      router.push('/dashboard');
+      router.push('/en/dashboard');
       router.refresh();
     } catch (error: any) {
       console.error('Google sign-in error:', error);

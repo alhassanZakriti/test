@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const params = useParams()
+  const lang = params.lang as string
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,7 +45,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-6">
+          <Link href={`/${lang}/`} className="inline-block mb-6">
             <img 
               src="/logo.svg" 
               alt="Modual Logo" 
@@ -120,7 +122,7 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Al een account?{' '}
-              <Link href="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
+              <Link href={`/${lang}/auth/inloggen`} className="text-primary-600 hover:text-primary-700 font-semibold">
                 Log in
               </Link>
             </p>
@@ -128,7 +130,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="text-center mt-6">
-          <Link href="/" className="text-gray-600 hover:text-gray-800 text-sm">
+          <Link href={`/${lang}/`} className="text-gray-600 hover:text-gray-800 text-sm">
             ← Terug naar home
           </Link>
         </div>

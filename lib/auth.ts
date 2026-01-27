@@ -38,6 +38,8 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
+          console.log('[Auth] Attempting to authorize user:', credentials.email);
+
           const user = await prisma.user.findUnique({
             where: {
               email: credentials.email,
@@ -49,6 +51,8 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
+          console.log('[Auth] User found:', user.email);
+
           const isPasswordValid = await bcrypt.compare(
             credentials.password,
             user.password
@@ -59,14 +63,16 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          console.log('[Auth] User authenticated successfully:', user.email);
-          return {
+          const returnedUser = {
             id: user.id,
             email: user.email,
             name: user.name,
             image: user.image,
             role: user.role,
           };
+
+          console.log('[Auth] User authenticated successfully:', user.email, 'Returning:', returnedUser);
+          return returnedUser;
         } catch (error) {
           console.error('[Auth] Authorization error:', error);
           return null;
@@ -89,10 +95,21 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Don't redirect to signin page after successful login
+      if (url.includes('/auth/inloggen') || url.includes('/auth/signin')) {
+        return baseUrl;
+      }
+      // Allows relative callback URLs
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
   pages: {
-    signIn: '/auth/inloggen',
-    error: '/auth/fout',
+    signIn: '/en/auth/inloggen',
+    error: '/en/auth/fout',
   },
   session: {
     strategy: 'jwt',

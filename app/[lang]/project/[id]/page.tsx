@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocalizedPath } from '@/lib/useLocalizedPath';
 import { 
   FiArrowLeft, 
   FiUser, 
@@ -45,6 +46,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params?.id as string;
+  const { getPath } = useLocalizedPath();
   
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -139,7 +141,7 @@ export default function ProjectPage() {
         <div className="text-center">
           <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">{t('projectDetail.projectNotFound')}</p>
           <Link
-            href="/dashboard"
+            href={getPath("/dashboard")}
             className="text-primary-500 hover:text-primary-600 font-semibold"
           >
             {t('projectDetail.backToDashboard')}
@@ -154,7 +156,7 @@ export default function ProjectPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <Link
-          href="/dashboard"
+          href={getPath("/dashboard")}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mb-6"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

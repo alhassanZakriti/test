@@ -7,12 +7,14 @@ import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocalizedPath } from '@/lib/useLocalizedPath';
 import { FiMenu, FiX, FiUser, FiLogOut } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
   const { data: session } = useSession();
   const { t } = useLanguage();
+  const { getPath } = useLocalizedPath();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -24,7 +26,7 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <Link
-              href="/pricing"
+              href={getPath("/pricing")}
               className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
             >
               {t('nav.pricing')}
@@ -34,26 +36,26 @@ export default function Navbar() {
             {session ? (
               <>
                 <Link
-                  href="/dashboard"
+                  href={getPath("/dashboard")}
                   className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
                 >
                   {t('nav.dashboard')}
                 </Link>
                 <Link
-                  href="/dashboard/nieuw-project"
+                  href={getPath("/dashboard/nieuw-project")}
                   className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
                 >
                   {t('nav.newProject')}
                 </Link>
                 <Link
-                  href="/dashboard/profile"
+                  href={getPath("/dashboard/profile")}
                   className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
                 >
                   {t('nav.profile') || 'Profile'}
                 </Link>
                 {(session.user as any)?.role === 'admin' && (
                   <Link
-                    href="/admin"
+                    href={getPath("/admin")}
                     className="text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
                   >
                     {t('nav.admin')}
@@ -70,13 +72,13 @@ export default function Navbar() {
             ) : (
               <>
                 <Link
-                  href="/auth/inloggen"
+                  href={getPath("/auth/inloggen")}
                   className="md:flex hidden text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors"
                 >
                   {t('nav.login')}
                 </Link>
                 <Link
-                  href="/auth/registreren"
+                  href={getPath("/auth/registreren")}
                   className="bg-gradient-modual text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
                 >
                   {t('nav.register')}
@@ -113,7 +115,7 @@ export default function Navbar() {
 
               {/* Pricing Link */}
               <Link
-                href="/pricing"
+                href={getPath("/pricing")}
                 className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -130,21 +132,21 @@ export default function Navbar() {
 
                   {/* Navigation Links */}
                   <Link
-                    href="/dashboard"
+                    href={getPath("/dashboard")}
                     className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('nav.dashboard')}
                   </Link>
                   <Link
-                    href="/dashboard/nieuw-project"
+                    href={getPath("/dashboard/nieuw-project")}
                     className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('nav.newProject')}
                   </Link>
                   <Link
-                    href="/dashboard/profile"
+                    href={getPath("/dashboard/profile")}
                     className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -152,7 +154,7 @@ export default function Navbar() {
                   </Link>
                   {(session.user as any)?.role === 'admin' && (
                     <Link
-                      href="/admin"
+                      href={getPath("/admin")}
                       className="block text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -176,14 +178,14 @@ export default function Navbar() {
                 <>
                   {/* Guest Navigation */}
                   <Link
-                    href="/auth/inloggen"
+                    href={getPath("/auth/inloggen")}
                     className="md:block hidden text-gray-700 dark:text-gray-300 hover:text-modual-purple dark:hover:text-modual-pink transition-colors py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('nav.login')}
                   </Link>
                   <Link
-                    href="/auth/registreren"
+                    href={getPath("/auth/registreren")}
                     className=" block w-full text-center bg-gradient-modual text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity"
                     onClick={() => setIsMenuOpen(false)}
                   >

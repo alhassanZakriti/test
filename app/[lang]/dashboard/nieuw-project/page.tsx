@@ -4,15 +4,17 @@ import ProjectForm from '@/components/ProjectForm';
 import { FiArrowLeft } from 'react-icons/fi';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocalizedPath } from '@/lib/useLocalizedPath';
 
 export default function NewProjectPage() {
   const { t } = useLanguage();
+  const { getPath } = useLocalizedPath();
   
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <Link
-          href="/dashboard"
+          href={getPath("/dashboard")}
           className="inline-flex items-center text-modual-purple dark:text-modual-pink hover:text-modual-pink dark:hover:text-modual-purple transition-colors mb-4"
         >
           <FiArrowLeft className="mr-2" />
