@@ -74,7 +74,7 @@ export default function DashboardPage() {
         setShowPaymentModal(true);
       }
     }
-  }, [projects, showPaymentModal, isPaymentOverdue]);
+  }, [projects, showPaymentModal]);
 
   // Toast notifications for payment reminders
   useEffect(() => {
