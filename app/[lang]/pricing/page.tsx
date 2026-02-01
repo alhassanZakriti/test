@@ -70,7 +70,7 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className='min-h-screen flex flex-col'>
+    <div className='min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900'>
 
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
         <nav className="container mx-auto px-4 py-6 flex items-center justify-between">

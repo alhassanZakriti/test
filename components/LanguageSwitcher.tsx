@@ -27,7 +27,7 @@ export default function LanguageSwitcher() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative text-black dark:text-white">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"

@@ -19,7 +19,7 @@ export default function ThemeSwitcher() {
   const currentTheme = themes.find((t) => t.value === theme) || themes[0];
 
   return (
-    <div className="relative">
+    <div className="relative text-black dark:text-white">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
