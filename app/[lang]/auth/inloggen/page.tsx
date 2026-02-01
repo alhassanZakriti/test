@@ -38,7 +38,8 @@ export default function LoginPage() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: `/${getLangFromPath()}/dashboard`,
       });
 
       if (result?.error) {
@@ -89,7 +90,8 @@ export default function LoginPage() {
 
       // Sign in with NextAuth using the email
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: true,
+        callbackUrl: `/${getLangFromPath()}/dashboard`,
         email: firebaseUser.email,
         password: firebaseUser.uid, // Use UID as password for Firebase users
       });
@@ -137,8 +139,8 @@ export default function LoginPage() {
       const callbackUrl = `/${lang}/dashboard`;
       
       const result = await signIn(provider, { 
-        redirect: false,
-        callbackUrl,
+        redirect: true,
+        callbackUrl: callbackUrl,
       });
       
       if (result?.ok) {

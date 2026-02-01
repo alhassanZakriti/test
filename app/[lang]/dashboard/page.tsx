@@ -52,11 +52,11 @@ export default function DashboardPage() {
   const [previousProjects, setPreviousProjects] = useState<Project[]>([]);
 
   // Redirect if not authenticated
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push(`/${lang}/auth/inloggen`);
-    }
-  }, [status, router, lang]);
+  // useEffect(() => {
+  //   if (status === 'unauthenticated') {
+  //     router.push(`/${lang}/auth/inloggen`);
+  //   }
+  // }, [status, router, lang]);
 
   useEffect(() => {
     fetchProjects();

@@ -97,7 +97,7 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Don't redirect to signin page after successful login
-      if (url.includes('/auth/inloggen') || url.includes('/auth/signin')) {
+      if (url.includes('/en/auth/inloggen')) {
         return baseUrl;
       }
       // Allows relative callback URLs

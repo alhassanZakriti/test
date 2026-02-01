@@ -13,7 +13,6 @@ import { motion } from 'framer-motion';
 export default function RegisterPage() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { data: session } = useSession();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,12 +20,21 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect to dashboard if already authenticated
-  useEffect(() => {
-    if (session) {
-      router.push('/en/dashboard');
+  const { data: session, status } = useSession();
+  
+
+    useEffect(() => {
+    // Only redirect if on a different page (not on login page)
+    if (status === 'authenticated' && typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      // Don't redirect if we're already on a login page
+      if (!pathname.includes('/auth/') && !pathname.includes('/registreren')) {
+        router.push('/en/dashboard');
+      }
     }
-  }, [session, router]);
+  }, [status, router]);
+
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,12 +72,16 @@ export default function RegisterPage() {
         setIsLoading(false);
         return;
       }
+      if (response.ok) {
+        window.location.reload();
+      }
 
       // Auto-login after registration
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/en/dashboard',
       });
 
       if (result?.error) {
@@ -112,9 +124,11 @@ export default function RegisterPage() {
         throw new Error('Failed to authenticate with backend');
       }
 
+      
       // Sign in with NextAuth using the email
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/en/dashboard',
         email: firebaseUser.email,
         password: firebaseUser.uid, // Use UID as password for Firebase users
       });

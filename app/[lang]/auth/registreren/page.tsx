@@ -71,7 +71,8 @@ export default function RegisterPage() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/en/dashboard',
       });
 
       if (result?.error) {
@@ -116,7 +117,8 @@ export default function RegisterPage() {
 
       // Sign in with NextAuth using the email
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: true,
+        callbackUrl: '/en/dashboard',
         email: firebaseUser.email,
         password: firebaseUser.uid, // Use UID as password for Firebase users
       });

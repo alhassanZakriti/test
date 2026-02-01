@@ -86,13 +86,7 @@ export default function AdminDashboard() {
             <p className="text-gray-600 dark:text-gray-400 mt-2">{t('adminProjects.viewAllProjects')}</p>
           </div>
           <div className="grid grid-cols-2 lg:flex lg:flex-row gap-2 lg:gap-3">
-            <a
-              href="/admin/users"
-              className="px-3 py-2 lg:px-6 lg:py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center justify-center space-x-2 text-sm lg:text-base"
-            >
-              <FiUsers size={18} className="lg:w-5 lg:h-5" />
-              <span>Users</span>
-            </a>
+            
             <a
               href="/admin/users"
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium inline-flex items-center space-x-2"
