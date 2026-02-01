@@ -7,9 +7,14 @@ import { locales } from '@/lib/i18n'
 
 const inter = Inter({ subsets: ['latin'] })
 
+
+
 export const metadata: Metadata = {
   title: 'Modual - Build Your Own Website',
   description: 'Create your own professional website easily with Modual',
+  icons:{
+    icon: '/favicon.svg',
+  }
 }
 
 export async function generateStaticParams() {
