@@ -51,6 +51,9 @@ export default function DashboardPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [shownToasts, setShownToasts] = useState<Set<string>>(new Set());
   const [previousProjects, setPreviousProjects] = useState<Project[]>([]);
+  
+  // Check if user is admin - admins have full access without payment restrictions
+  const isAdmin = session && (session.user as any).role === 'admin';
 
   // Redirect if not authenticated
   // useEffect(() => {
@@ -66,9 +69,15 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-show payment modal for PREVIEW projects (blocking)
+  // Auto-show payment modal for PREVIEW projects (blocking) - ONLY FOR CLIENTS, NOT ADMINS
   useEffect(() => {
-    console.log('🔍 Auto-check PREVIEW: projects count =', projects.length, 'showPaymentModal =', showPaymentModal);
+    console.log('🔍 Auto-check PREVIEW: projects count =', projects.length, 'showPaymentModal =', showPaymentModal, 'isAdmin =', isAdmin);
+    
+    // Skip payment modal logic entirely if user is admin
+    if (isAdmin) {
+      console.log('👑 User is admin - skipping payment modal checks');
+      return;
+    }
     
     if (projects.length > 0 && !showPaymentModal) {
       // Log all projects for debugging
@@ -104,10 +113,13 @@ export default function DashboardPage() {
         }
       }
     }
-  }, [projects, showPaymentModal]);
+  }, [projects, showPaymentModal, isAdmin]);
 
-  // Toast notifications for payment reminders
+  // Toast notifications for payment reminders - ONLY FOR CLIENTS, NOT ADMINS
   useEffect(() => {
+    // Skip toast notifications if user is admin
+    if (isAdmin) return;
+    
     if (projects.length > 0) {
       projects.forEach(project => {
         // Only show toast if not already shown in this session
@@ -171,7 +183,7 @@ export default function DashboardPage() {
         }
       });
     }
-  }, [projects, shownToasts]);
+  }, [projects, shownToasts, isAdmin]);
 
   const fetchProjects = async () => {
     try {
@@ -186,8 +198,9 @@ export default function DashboardPage() {
         newProjects.forEach((newProject: Project) => {
           const oldProject = previousProjects.find(p => p.id === newProject.id);
           
-          // Check if project just became completed and requires payment
+          // Check if project just became completed and requires payment - ONLY FOR CLIENTS
           if (
+            !isAdmin &&
             newProject.status === 'Completed' &&
             newProject.paymentRequired &&
             newProject.paymentStatus !== 'Paid' &&
@@ -241,8 +254,8 @@ export default function DashboardPage() {
       console.log('📦 Project data received:', data);
       const project = data.project;
       
-      // If project is in PREVIEW status and payment not yet made, open payment modal directly
-      if (project.status === 'PREVIEW' && project.paymentStatus !== 'Paid' && project.paymentStatus !== 'Pending') {
+      // If project is in PREVIEW status and payment not yet made, open payment modal directly - ONLY FOR CLIENTS
+      if (!isAdmin && project.status === 'PREVIEW' && project.paymentStatus !== 'Paid' && project.paymentStatus !== 'Pending') {
         console.log('💳 Opening payment modal for PREVIEW project');
         setPaymentProject(project);
         setShowPaymentModal(true);
@@ -342,13 +355,13 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Blocking overlay when PREVIEW payment modal is open */}
-      {showPaymentModal && paymentProject?.status === 'PREVIEW' && (
+      {/* Blocking overlay when PREVIEW payment modal is open - ONLY FOR CLIENTS */}
+      {!isAdmin && showPaymentModal && paymentProject?.status === 'PREVIEW' && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 pointer-events-none" />
       )}
       
-      {/* Main content - blurred when blocking modal is open */}
-      <div className={`${showPaymentModal && paymentProject?.status === 'PREVIEW' ? 'blur-sm pointer-events-none' : ''}`}>
+      {/* Main content - blurred when blocking modal is open - ONLY FOR CLIENTS */}
+      <div className={`${!isAdmin && showPaymentModal && paymentProject?.status === 'PREVIEW' ? 'blur-sm pointer-events-none' : ''}`}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             {t('dashboard.welcomeBack')}, <span className="gradient-text">{session?.user?.name}</span>!
@@ -452,36 +465,45 @@ export default function DashboardPage() {
                       </a>
                     )}
                     
-                    {/* Payment Status */}
-                    {project.paymentStatus === 'Pending' || project.paymentStatus === "pending" ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPaymentProject(project);
-                          setShowPaymentModal(true);
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
-                      >
-                        <FiDollarSign size={14} />
-                        <span>💳 Upload Receipt - {project.price || 150} MAD</span>
-                      </button>
-                    ) : project.paymentStatus === 'Paid' ? (
-                      <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                        <FiCheckCircle size={14} />
-                        <span>Payment Verified ✓</span>
+                    {/* Payment Status - ONLY SHOW FOR CLIENTS, NOT ADMINS */}
+                    {!isAdmin && (
+                      project.paymentStatus === 'Pending' || project.paymentStatus === "pending" ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPaymentProject(project);
+                            setShowPaymentModal(true);
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
+                        >
+                          <FiDollarSign size={14} />
+                          <span>💳 Upload Receipt - {project.price || 150} MAD</span>
+                        </button>
+                      ) : project.paymentStatus === 'Paid' ? (
+                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                          <FiCheckCircle size={14} />
+                          <span>Payment Verified ✓</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPaymentProject(project);
+                            setShowPaymentModal(true);
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
+                        >
+                          <FiDollarSign size={14} />
+                          <span>💳 Upload Receipt - {project.price || 150} MAD</span>
+                        </button>
+                      )
+                    )}
+                    
+                    {/* Admin badge for admins viewing PREVIEW projects */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                        <span>👑 Admin Access - Full Visibility</span>
                       </div>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPaymentProject(project);
-                          setShowPaymentModal(true);
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
-                      >
-                        <FiDollarSign size={14} />
-                        <span>💳 Upload Receipt - {project.price || 150} MAD</span>
-                      </button>
                     )}
                   </div>
                 )}
