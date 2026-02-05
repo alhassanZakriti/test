@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import pdfParse from 'pdf-parse';
+
+// Dynamic import for pdf-parse (CommonJS module)
+const pdfParse = require('pdf-parse');
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,9 +23,8 @@ export async function POST(request: NextRequest) {
     // Convert base64 to buffer
     const pdfBuffer = Buffer.from(pdfBase64, 'base64');
 
-    // Parse PDF using the default function
-    const pdf = (pdfParse as any).default || pdfParse;
-    const data = await pdf(pdfBuffer);
+    // Parse PDF
+    const data = await pdfParse(pdfBuffer);
     const text = data.text;
 
     // Extract payment information from PDF text
