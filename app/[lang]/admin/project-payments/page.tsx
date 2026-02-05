@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { CheckCircle, XCircle, Clock, Eye, Search, Filter, ExternalLink } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ProjectPayment {
   id: string;
@@ -35,6 +36,7 @@ interface ProjectPayment {
 export default function AdminProjectPaymentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { t } = useLanguage();
   const [payments, setPayments] = useState<ProjectPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'verified'>('pending');
@@ -316,7 +318,11 @@ export default function AdminProjectPaymentsPage() {
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Project Status</p>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {selectedPayment.project.status}
+                      {selectedPayment.project.status === 'NEW' || selectedPayment.project.status === 'New' ? t('common.new') :
+                       selectedPayment.project.status === 'IN_PROGRESS' || selectedPayment.project.status === 'In Progress' ? t('common.inProgress') :
+                       selectedPayment.project.status === 'PREVIEW' ? t('admin.preview') :
+                       selectedPayment.project.status === 'COMPLETE' || selectedPayment.project.status === 'Completed' ? t('admin.complete') :
+                       selectedPayment.project.status}
                     </p>
                   </div>
                   <div>

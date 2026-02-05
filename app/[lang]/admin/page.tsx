@@ -11,12 +11,15 @@ interface Project {
   id: string;
   title: string;
   phoneNumber: string;
+  websiteType: string;
+  price: number;
   description: string;
   textInput: string;
   logoUrl: string;
   photoUrls: string;
   voiceMemoUrl: string;
   status: string;
+  previewUrl?: string;
   createdAt: string;
   user: {
     name: string;
@@ -31,6 +34,9 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [deletingProject, setDeletingProject] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -48,31 +54,67 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateProjectStatus = async (projectId: string, newStatus: string) => {
+  const updateProjectStatus = async (projectId: string, newStatus: string, previewUrlValue?: string) => {
     try {
       const response = await fetch('/api/admin/projects/update-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, status: newStatus }),
+        body: JSON.stringify({ 
+          projectId, 
+          status: newStatus,
+          previewUrl: previewUrlValue || undefined
+        }),
       });
       
       if (response.ok) {
         await fetchProjects();
+        setPreviewUrl('');
       }
     } catch (error) {
       console.error('Error updating project status:', error);
     }
   };
 
+  const deleteProject = async (projectId: string) => {
+    setDeletingProject(projectId);
+    try {
+      const response = await fetch(`/api/admin/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        await fetchProjects();
+        setSelectedProject(null);
+        setShowDeleteConfirm(false);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete project');
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Failed to delete project');
+    } finally {
+      setDeletingProject(null);
+    }
+  };
+
   const filteredProjects = filter === 'all' 
     ? projects 
-    : projects.filter(p => p.status === filter);
+    : projects.filter(p => {
+        // Handle both old and new status formats
+        if (filter === 'NEW') return p.status === 'NEW' || p.status === 'New';
+        if (filter === 'IN_PROGRESS') return p.status === 'IN_PROGRESS' || p.status === 'In Progress';
+        if (filter === 'PREVIEW') return p.status === 'PREVIEW';
+        if (filter === 'COMPLETE') return p.status === 'COMPLETE' || p.status === 'Completed';
+        return p.status === filter;
+      });
 
   const stats = {
     total: projects.length,
-    new: projects.filter(p => p.status === 'New').length,
-    inProgress: projects.filter(p => p.status === 'In Progress').length,
-    completed: projects.filter(p => p.status === 'Completed').length,
+    new: projects.filter(p => p.status === 'NEW' || p.status === 'New').length,
+    inProgress: projects.filter(p => p.status === 'IN_PROGRESS' || p.status === 'In Progress').length,
+    preview: projects.filter(p => p.status === 'PREVIEW').length,
+    completed: projects.filter(p => p.status === 'COMPLETE' || p.status === 'Completed').length,
   };
 
   return (
@@ -232,6 +274,20 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Preview */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.preview')}</span>
+                <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{stats.preview}</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div
+                  className="bg-gradient-to-r from-purple-400 to-purple-600 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${stats.total > 0 ? (stats.preview / stats.total) * 100 : 0}%` }}
+                ></div>
+              </div>
+            </div>
+
             {/* Voltooid */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -359,6 +415,15 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-purple-400 to-purple-600"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{t('admin.preview')}</span>
+              </div>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {stats.total > 0 ? Math.round((stats.preview / stats.total) * 100) : 0}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-400 to-green-600"></div>
                 <span className="text-sm text-gray-700 dark:text-gray-300">{t('admin.completed')}</span>
               </div>
@@ -372,7 +437,7 @@ export default function AdminDashboard() {
 
       {/* Filter Tabs */}
       <div className="mb-6 flex space-x-2 overflow-x-auto">
-        {['all', 'New', 'In Progress', 'Completed'].map((status) => (
+        {['all', 'NEW', 'IN_PROGRESS', 'PREVIEW', 'COMPLETE'].map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -382,7 +447,11 @@ export default function AdminDashboard() {
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
-            {status === 'all' ? t('admin.all') : status === 'New' ? t('admin.new') : status === 'In Progress' ? t('admin.inProgress') : t('admin.completed')}
+            {status === 'all' ? t('admin.all') : 
+             status === 'NEW' ? t('admin.new') : 
+             status === 'IN_PROGRESS' ? t('admin.inProgress') : 
+             status === 'PREVIEW' ? t('admin.preview') :
+             t('admin.complete')}
           </button>
         ))}
       </div>
@@ -444,13 +513,19 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          project.status === 'New'
+                          project.status === 'NEW' || project.status === 'New'
                             ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-                            : project.status === 'In Progress'
+                            : project.status === 'IN_PROGRESS' || project.status === 'In Progress'
                             ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                            : project.status === 'PREVIEW'
+                            ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200'
                             : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                         }`}>
-                        {project.status}
+                        {project.status === 'NEW' ? t('admin.new') :
+                         project.status === 'IN_PROGRESS' ? t('admin.inProgress') :
+                         project.status === 'PREVIEW' ? t('admin.preview') :
+                         project.status === 'COMPLETE' ? t('admin.complete') :
+                         project.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -494,6 +569,14 @@ export default function AdminDashboard() {
                     <span>{selectedProject.phoneNumber}</span>
                   </p>
                 )}
+                {selectedProject.websiteType && (
+                  <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center space-x-2">
+                    <span>{selectedProject.websiteType === 'ecommerce' ? '🛒' : '🌐'}</span>
+                    <span className="font-medium">
+                      {selectedProject.websiteType === 'ecommerce' ? 'E-commerce' : 'Basic Website'} - {selectedProject.price} MAD
+                    </span>
+                  </p>
+                )}
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {new Date(selectedProject.createdAt).toLocaleDateString('nl-NL', {
                     year: 'numeric',
@@ -520,15 +603,53 @@ export default function AdminDashboard() {
               <select
                 value={selectedProject.status}
                 onChange={(e) => {
-                  updateProjectStatus(selectedProject.id, e.target.value);
-                  setSelectedProject({ ...selectedProject, status: e.target.value });
+                  const newStatus = e.target.value;
+                  setSelectedProject({ ...selectedProject, status: newStatus });
+                  // If not PREVIEW, update immediately
+                  if (newStatus !== 'PREVIEW') {
+                    updateProjectStatus(selectedProject.id, newStatus);
+                  }
                 }}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-modual-purple"
               >
-                <option value="New">{t('admin.new')}</option>
-                <option value="In Progress">{t('admin.inProgress')}</option>
-                <option value="Completed">{t('admin.completed')}</option>
+                <option value="NEW">{t('common.new')}</option>
+                <option value="IN_PROGRESS">{t('common.inProgress')}</option>
+                <option value="PREVIEW">{t('admin.preview')}</option>
+                <option value="COMPLETE">{t('admin.complete')}</option>
               </select>
+              
+              {/* Preview URL Input - Only show when PREVIEW is selected */}
+              {selectedProject.status === 'PREVIEW' && (
+                <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-200 dark:border-purple-800">
+                  <label className="block text-sm font-medium text-purple-900 dark:text-purple-100 mb-2">
+                    {t('admin.previewUrl')} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={previewUrl || selectedProject.previewUrl || ''}
+                    onChange={(e) => setPreviewUrl(e.target.value)}
+                    placeholder="https://example.com/preview"
+                    className="w-full px-4 py-2 border border-purple-300 dark:border-purple-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500 mb-3"
+                    required
+                  />
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mb-3">
+                    {t('admin.previewUrlHelp')}
+                  </p>
+                  <button
+                    onClick={() => {
+                      const urlToSave = previewUrl || selectedProject.previewUrl;
+                      if (urlToSave && urlToSave.trim()) {
+                        updateProjectStatus(selectedProject.id, 'PREVIEW', urlToSave);
+                      } else {
+                        alert(t('admin.previewUrlRequired'));
+                      }
+                    }}
+                    className="w-full px-4 py-2 bg-gradient-modual text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    {t('admin.saveStatus')}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Logo */}
@@ -602,13 +723,76 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="flex justify-between space-x-3 mt-6">
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={deletingProject === selectedProject.id}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deletingProject === selectedProject.id ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete Project
+                  </>
+                )}
+              </button>
               <button
                 onClick={() => setSelectedProject(null)}
                 className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 {t('admin.close')}
               </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full"
+          >
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+                Delete Project?
+              </h3>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Are you sure you want to delete &quot;{selectedProject.title}&quot;? This action cannot be undone and will permanently remove all project data including files and payment information.
+              </p>
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deletingProject === selectedProject.id}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteProject(selectedProject.id)}
+                  disabled={deletingProject === selectedProject.id}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deletingProject === selectedProject.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>

@@ -15,6 +15,7 @@ export default function ProjectForm() {
   const [formData, setFormData] = useState({
     title: '',
     phoneNumber: '',
+    websiteType: 'basic', // 'basic' or 'ecommerce'
     textInput: '',
     logoUrl: '', // Will store base64 encoded logo
     photoUrls: [] as string[], // Will store base64 encoded images
@@ -214,6 +215,48 @@ export default function ProjectForm() {
               placeholder={t('projectForm.phoneNumberPlaceholder')}
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('projectForm.websiteType')} <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, websiteType: 'basic' })}
+                className={`px-6 py-4 rounded-lg border-2 transition-all ${
+                  formData.websiteType === 'basic'
+                    ? 'border-modual-purple bg-purple-50 dark:bg-purple-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
+                }`}
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🌐</div>
+                  <div className="font-semibold text-gray-900 dark:text-white">{t('projectForm.basicWebsite')}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    150 {t('projectForm.currency')}
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, websiteType: 'ecommerce' })}
+                className={`px-6 py-4 rounded-lg border-2 transition-all ${
+                  formData.websiteType === 'ecommerce'
+                    ? 'border-modual-purple bg-purple-50 dark:bg-purple-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
+                }`}
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🛒</div>
+                  <div className="font-semibold text-gray-900 dark:text-white">{t('projectForm.ecommerce')}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    200 {t('projectForm.currency')}
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div>

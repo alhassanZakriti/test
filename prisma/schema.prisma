@@ -72,17 +72,18 @@ model Project {
   userId          String
   title           String?
   phoneNumber     String   @default("") // Phone number (empty string for existing projects)
+  websiteType     String   @default("basic") // "basic" or "ecommerce"
   description     String?  @db.Text
   textInput       String?  @db.Text
   logoUrl         String?  @db.Text // Base64 encoded logo
   photoUrls       String   @default("[]") @db.Text // JSON string of photo URLs
   voiceMemoUrl    String?  @db.Text
-  status          String   @default("New") // "New", "In Progress", "Completed"
+  status          String   @default("NEW") // "NEW", "IN_PROGRESS", "PREVIEW", "COMPLETE"
   assignedTo      String?
   aiPreview       String?  @db.Text
   paymentRequired Boolean  @default(false)
-  paymentStatus   String   @default("Not Required") // "Not Required", "Pending", "Paid", "Rejected"
-  paymentAlias    String?  @unique // MODXXXXXXXX format for project payments
+  paymentStatus   String   @default("Not Required") // "Not Required", "Required", "Pending", "Paid", "Rejected"
+  paymentAlias    String?  @unique // MODXXXXXXXX format - auto-generated on creation
   previewUrl      String?  @db.Text // Preview URL for AI-generated content
   price           Int      @default(150) // Price in MAD
   rejectionCount  Int      @default(0) // Number of payment rejections

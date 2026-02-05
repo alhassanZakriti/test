@@ -17,6 +17,8 @@ interface Project {
   description?: string;
   textInput?: string;
   phoneNumber?: string;
+  websiteType?: string;
+  price?: number;
   logoUrl?: string;
   photoUrls?: string;
   voiceMemoUrl?: string;
@@ -25,7 +27,6 @@ interface Project {
   paymentStatus?: string;
   paymentRequired?: boolean;
   paymentDeadline?: string;
-  price?: number;
   paymentAlias?: string;
   createdAt: string;
   updatedAt?: string;
@@ -65,13 +66,42 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-show payment modal for overdue projects
+  // Auto-show payment modal for PREVIEW projects (blocking)
   useEffect(() => {
+    console.log('🔍 Auto-check PREVIEW: projects count =', projects.length, 'showPaymentModal =', showPaymentModal);
+    
     if (projects.length > 0 && !showPaymentModal) {
-      const overdueProject = projects.find(project => isPaymentOverdue(project));
-      if (overdueProject) {
-        setPaymentProject(overdueProject);
+      // Log all projects for debugging
+      console.log('📋 All projects:', projects.map(p => ({
+        id: p.id,
+        title: p.title,
+        status: p.status,
+        paymentStatus: p.paymentStatus,
+        paymentAlias: p.paymentAlias
+      })));
+      
+      // Find ANY project in PREVIEW status - prioritize this over everything
+      const previewProject = projects.find(project => project.status === 'PREVIEW');
+      
+      if (previewProject) {
+        console.log('🔒 PREVIEW project found - opening payment modal (blocking)', {
+          id: previewProject.id,
+          title: previewProject.title,
+          status: previewProject.status,
+          paymentStatus: previewProject.paymentStatus,
+          paymentAlias: previewProject.paymentAlias
+        });
+        setPaymentProject(previewProject);
         setShowPaymentModal(true);
+      } else {
+        console.log('❌ No PREVIEW project found');
+        // Check for overdue projects only if no PREVIEW project exists
+        const overdueProject = projects.find(project => isPaymentOverdue(project));
+        if (overdueProject) {
+          console.log('⏰ Found overdue project instead:', overdueProject.title);
+          setPaymentProject(overdueProject);
+          setShowPaymentModal(true);
+        }
       }
     }
   }, [projects, showPaymentModal]);
@@ -145,9 +175,11 @@ export default function DashboardPage() {
 
   const fetchProjects = async () => {
     try {
+      console.log('📡 Fetching projects from API...');
       const response = await fetch('/api/projects');
       const data = await response.json();
       const newProjects = data.projects || [];
+      console.log('📦 Fetched', newProjects.length, 'projects');
       
       // Detect newly completed projects that require payment
       if (previousProjects.length > 0) {
@@ -207,8 +239,18 @@ export default function DashboardPage() {
       console.log('📡 API Response status:', response.status);
       const data = await response.json();
       console.log('📦 Project data received:', data);
-      setSelectedProject(data.project);
-      console.log('✅ Modal should now open');
+      const project = data.project;
+      
+      // If project is in PREVIEW status and payment not yet made, open payment modal directly
+      if (project.status === 'PREVIEW' && project.paymentStatus !== 'Paid' && project.paymentStatus !== 'Pending') {
+        console.log('💳 Opening payment modal for PREVIEW project');
+        setPaymentProject(project);
+        setShowPaymentModal(true);
+      } else {
+        // Otherwise, open the project detail modal
+        setSelectedProject(project);
+        console.log('✅ Modal should now open');
+      }
     } catch (error) {
       console.error('❌ Error fetching project details:', error);
     }
@@ -216,10 +258,15 @@ export default function DashboardPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'NEW':
       case 'New':
         return <FiClock className="text-blue-500 dark:text-blue-400" />;
+      case 'IN_PROGRESS':
       case 'In Progress':
         return <FiAlertCircle className="text-yellow-500 dark:text-yellow-400" />;
+      case 'PREVIEW':
+        return <FiExternalLink className="text-purple-500 dark:text-purple-400" />;
+      case 'COMPLETE':
       case 'Completed':
         return <FiCheckCircle className="text-green-500 dark:text-green-400" />;
       default:
@@ -229,10 +276,15 @@ export default function DashboardPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'NEW':
       case 'New':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'IN_PROGRESS':
       case 'In Progress':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'PREVIEW':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'COMPLETE':
       case 'Completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       default:
@@ -242,12 +294,17 @@ export default function DashboardPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case 'NEW':
       case 'New':
         return t('common.new');
+      case 'IN_PROGRESS':
       case 'In Progress':
         return t('common.inProgress');
+      case 'PREVIEW':
+        return t('common.preview');
+      case 'COMPLETE':
       case 'Completed':
-        return t('common.completed');
+        return t('common.complete');
       default:
         return status;
     }
@@ -285,12 +342,19 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          {t('dashboard.welcomeBack')}, <span className="gradient-text">{session?.user?.name}</span>!
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">{t('dashboard.manageProjects')}</p>
-      </div>
+      {/* Blocking overlay when PREVIEW payment modal is open */}
+      {showPaymentModal && paymentProject?.status === 'PREVIEW' && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 pointer-events-none" />
+      )}
+      
+      {/* Main content - blurred when blocking modal is open */}
+      <div className={`${showPaymentModal && paymentProject?.status === 'PREVIEW' ? 'blur-sm pointer-events-none' : ''}`}>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {t('dashboard.welcomeBack')}, <span className="gradient-text">{session?.user?.name}</span>!
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">{t('dashboard.manageProjects')}</p>
+        </div>
 
 
       <div className="mb-8">
@@ -341,9 +405,20 @@ export default function DashboardPage() {
               className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all p-6 cursor-pointer hover:scale-105 border border-transparent dark:border-gray-700"
             >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex-1">
-                    {project.title || t('dashboard.untitledProject')}
-                  </h3>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {project.title || t('dashboard.untitledProject')}
+                    </h3>
+                    {project.websiteType && (
+                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        <span>{project.websiteType === 'ecommerce' ? '🛒' : '🌐'}</span>
+                        <span>{project.websiteType === 'ecommerce' ? 'E-commerce' : 'Basic Website'}</span>
+                        <span className="text-modual-purple dark:text-modual-pink font-semibold">
+                          {project.price || 150} MAD
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   {getStatusIcon(project.status)}
                 </div>
                 
@@ -360,24 +435,10 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                {/* Payment Status & Actions */}
-                {project.paymentRequired && (
+                {/* Preview Link and Payment for PREVIEW status */}
+                {project.status === 'PREVIEW' && (
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                    {/* Payment Deadline Display */}
-                    {project.paymentDeadline && project.paymentStatus !== 'Paid' && (
-                      <div className={`text-xs font-medium px-2 py-1 rounded ${
-                        getDaysRemaining(project.paymentDeadline)! < 0
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                          : getDaysRemaining(project.paymentDeadline)! <= 7
-                          ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                      }`}>
-                        {getDaysRemaining(project.paymentDeadline)! < 0
-                          ? `⚠️ Overdue by ${Math.abs(getDaysRemaining(project.paymentDeadline)!)} days`
-                          : `📅 ${getDaysRemaining(project.paymentDeadline)} days left`}
-                      </div>
-                    )}
-                    
+                    {/* Preview Link */}
                     {project.previewUrl && (
                       <a
                         href={project.previewUrl}
@@ -387,18 +448,27 @@ export default function DashboardPage() {
                         className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
                       >
                         <FiExternalLink size={14} />
-                        <span>View Preview</span>
+                        <span>👀 View Preview</span>
                       </a>
                     )}
-                    {project.paymentStatus === 'Pending' ? (
-                      <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
-                        <FiClock size={14} />
-                        <span>Payment Pending Verification</span>
-                      </div>
+                    
+                    {/* Payment Status */}
+                    {project.paymentStatus === 'Pending' || project.paymentStatus === "pending" ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPaymentProject(project);
+                          setShowPaymentModal(true);
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
+                      >
+                        <FiDollarSign size={14} />
+                        <span>💳 Upload Receipt - {project.price || 150} MAD</span>
+                      </button>
                     ) : project.paymentStatus === 'Paid' ? (
                       <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                         <FiCheckCircle size={14} />
-                        <span>Payment Verified</span>
+                        <span>Payment Verified ✓</span>
                       </div>
                     ) : (
                       <button
@@ -407,16 +477,22 @@ export default function DashboardPage() {
                           setPaymentProject(project);
                           setShowPaymentModal(true);
                         }}
-                        className={`flex items-center gap-2 px-3 py-1.5 text-white text-sm font-medium rounded-md transition-colors w-full justify-center ${
-                          isPaymentOverdue(project)
-                            ? 'bg-red-600 hover:bg-red-700 animate-pulse'
-                            : 'bg-purple-600 hover:bg-purple-700'
-                        }`}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
                       >
                         <FiDollarSign size={14} />
-                        <span>{isPaymentOverdue(project) ? '⚠️ Pay Now ' : 'Pay '}{project.price || 150} MAD</span>
+                        <span>💳 Upload Receipt - {project.price || 150} MAD</span>
                       </button>
                     )}
+                  </div>
+                )}
+
+                {/* Completed status display */}
+                {project.status === 'COMPLETE' && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                      <FiCheckCircle size={14} />
+                      <span>✅ Project Complete!</span>
+                    </div>
                   </div>
                 )}
             </motion.div>
@@ -580,6 +656,36 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {/* Preview URL - Show for PREVIEW and COMPLETE status */}
+              {selectedProject.previewUrl && (selectedProject.status === 'PREVIEW' || selectedProject.status === 'COMPLETE') && (
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-6 border-2 border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                      <FiExternalLink size={20} />
+                      {t('projectDetail.projectPreview')}
+                    </h3>
+                    <span className="px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">
+                      {selectedProject.status === 'COMPLETE' ? '✅ ' + t('admin.complete') : '👀 ' + t('admin.preview')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
+                    {selectedProject.status === 'PREVIEW' 
+                      ? t('projectDetail.previewReadyMessage')
+                      : t('projectDetail.projectCompleteMessage')
+                    }
+                  </p>
+                  <a
+                    href={selectedProject.previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-modual text-white font-semibold rounded-lg hover:opacity-90 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                  >
+                    <FiExternalLink size={18} />
+                    <span>{t('projectDetail.viewPreview')}</span>
+                  </a>
+                </div>
+              )}
+
               {/* Description */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -649,23 +755,40 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       )}
+      </div> {/* End of blurred content wrapper */}
 
       {/* Project Payment Modal */}
-      {paymentProject && paymentProject.paymentAlias && (
+      {paymentProject && (
         <ProjectPaymentModal
           isOpen={showPaymentModal}
+          isBlocking={paymentProject.status === 'PREVIEW'}
           onClose={() => {
-            setShowPaymentModal(false);
-            setPaymentProject(null);
+            console.log('🚪 Attempting to close modal, project status:', paymentProject.status);
+            // Only allow close if not a PREVIEW project
+            if (paymentProject.status !== 'PREVIEW' || 
+                paymentProject.paymentStatus === 'Paid' || 
+                paymentProject.paymentStatus === 'Pending') {
+              console.log('✅ Close allowed');
+              setShowPaymentModal(false);
+              setPaymentProject(null);
+            } else {
+              console.log('🔒 Close blocked - PREVIEW status requires payment');
+            }
           }}
           project={{
             id: paymentProject.id,
             title: paymentProject.title || 'Untitled Project',
+            description: paymentProject.description,
+            textInput: paymentProject.textInput,
+            logoUrl: paymentProject.logoUrl,
+            photoUrls: paymentProject.photoUrls,
+            voiceMemoUrl: paymentProject.voiceMemoUrl,
             price: paymentProject.price || 150,
             previewUrl: paymentProject.previewUrl,
-            paymentStatus: paymentProject.paymentStatus || 'Not Required'
+            paymentStatus: paymentProject.paymentStatus || 'Not Required',
+            createdAt: paymentProject.createdAt
           }}
-          paymentAlias={paymentProject.paymentAlias}
+          paymentAlias={paymentProject.paymentAlias || ''}
           onPaymentSubmitted={() => {
             fetchProjects();
             setShowPaymentModal(false);

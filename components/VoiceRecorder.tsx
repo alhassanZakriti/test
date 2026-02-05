@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface VoiceRecorderProps {
   onRecordingComplete: (audioBlob: Blob) => void
@@ -8,6 +9,7 @@ interface VoiceRecorderProps {
 }
 
 export default function VoiceRecorder({ onRecordingComplete, onUpload }: VoiceRecorderProps) {
+  const { t } = useLanguage()
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -42,7 +44,7 @@ export default function VoiceRecorder({ onRecordingComplete, onUpload }: VoiceRe
       }, 1000)
     } catch (error) {
       console.error('Error starting recording:', error)
-      alert('Kon niet starten met opnemen. Controleer je microfoon toegang.')
+      alert(t('projectForm.recordingError') || 'Could not start recording. Please check your microphone access.')
     }
   }
 
@@ -81,7 +83,7 @@ export default function VoiceRecorder({ onRecordingComplete, onUpload }: VoiceRe
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
             </svg>
-            Start Opname
+            {t('projectForm.startRecording')}
           </button>
         ) : (
           <div className="flex flex-col items-center gap-3">
@@ -99,7 +101,7 @@ export default function VoiceRecorder({ onRecordingComplete, onUpload }: VoiceRe
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
               </svg>
-              Stop Opname
+              {t('projectForm.stopRecording')}
             </button>
           </div>
         )}
@@ -107,7 +109,7 @@ export default function VoiceRecorder({ onRecordingComplete, onUpload }: VoiceRe
 
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-gray-300"></div>
-        <span className="text-sm text-gray-500 font-medium">of</span>
+        <span className="text-sm text-gray-500 font-medium">{t('projectForm.uploadAudioOr')}</span>
         <div className="flex-1 h-px bg-gray-300"></div>
       </div>
 
@@ -117,10 +119,10 @@ export default function VoiceRecorder({ onRecordingComplete, onUpload }: VoiceRe
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           <span className="font-semibold text-gray-700 group-hover:text-modual-purple transition-colors">
-            Upload een audiobestand
+            {t('projectForm.uploadAudio')}
           </span>
           <span className="text-sm text-gray-500">
-            of sleep het hierheen
+            {t('projectForm.dragAudioHere')}
           </span>
           <input
             type="file"

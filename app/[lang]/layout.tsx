@@ -1,11 +1,16 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Cairo } from 'next/font/google'
 import Script from 'next/script'
 import '@/app/globals.css'
 import { Providers } from '@/app/providers'
 import { locales } from '@/lib/i18n'
 
 const inter = Inter({ subsets: ['latin'] })
+const cairo = Cairo({ 
+  subsets: ['arabic', 'latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+})
 
 
 
@@ -47,7 +52,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         />
         {/* End Google Tag Manager */}
       </head>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={params.lang === 'ar' ? cairo.className : inter.className} suppressHydrationWarning>
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe

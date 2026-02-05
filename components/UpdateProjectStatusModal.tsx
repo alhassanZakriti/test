@@ -71,15 +71,13 @@ export default function UpdateProjectStatusModal({
   if (!isOpen) return null;
 
   const statusOptions = [
-    { value: 'New', label: 'New', color: 'bg-blue-100 text-blue-800' },
-    { value: 'In Progress', label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'Completed', label: 'Completed (Requires Preview URL)', color: 'bg-green-100 text-green-800' },
-    { value: 'Awaiting Payment', label: 'Awaiting Payment', color: 'bg-orange-100 text-orange-800' },
-    { value: 'Paid', label: 'Paid', color: 'bg-emerald-100 text-emerald-800' },
-    { value: 'Rejected', label: 'Rejected', color: 'bg-red-100 text-red-800' }
+    { value: 'NEW', label: 'New', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+    { value: 'IN_PROGRESS', label: 'In Progress', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+    { value: 'PREVIEW', label: 'Preview (Requires Preview URL)', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
+    { value: 'COMPLETE', label: 'Complete', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' }
   ];
 
-  const requiresPreviewUrl = status === 'Completed';
+  const requiresPreviewUrl = status === 'PREVIEW';
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -145,22 +143,23 @@ export default function UpdateProjectStatusModal({
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {requiresPreviewUrl 
-                ? '⚠️ Required when marking as "Completed" - User will receive email with this link'
+                ? '⚠️ Required when marking as "Preview" - User will receive email with this link and payment instructions'
                 : 'Optional: Add a preview URL for the user to view the project'
               }
             </p>
           </div>
 
-          {/* Important Note for Completed Status */}
+          {/* Important Note for Preview Status */}
           {requiresPreviewUrl && (
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>⚠️ Important:</strong> When you mark this project as &quot;Completed&quot; with a preview URL:
+                <strong>⚠️ Important:</strong> When you mark this project as &quot;Preview&quot; with a preview URL:
               </p>
               <ul className="list-disc list-inside text-xs text-yellow-700 dark:text-yellow-300 mt-2 space-y-1">
                 <li>Payment will be automatically required for this project</li>
-                <li>User will receive an email notification with the preview link</li>
-                <li>User must review and make payment to receive the final project</li>
+                <li>User will receive an email notification with the preview link and payment instructions</li>
+                <li>User must upload payment receipt with project ID (MOD########) to complete the project</li>
+                <li>Once verified, project status will automatically change to &quot;Complete&quot;</li>
               </ul>
             </div>
           )}

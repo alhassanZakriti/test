@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { sendEmailNotification } from '@/lib/notifications';
 import { sendNewProjectNotificationToAdmin } from '@/lib/email';
+import { generatePaymentAlias } from '@/lib/payment-alias';
 
 export async function GET(request: Request) {
   try {
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, phoneNumber, description, textInput, logoUrl, photoUrls, voiceMemoUrl } = body;
+    const { title, phoneNumber, websiteType, description, textInput, logoUrl, photoUrls, voiceMemoUrl } = body;
 
     const userId = (session.user as any).id;
 
@@ -62,17 +63,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // Calculate price based on website type
+    const price = websiteType === 'ecommerce' ? 200 : 150;
+
+    // Generate unique payment alias for this project
+    const paymentAlias = await generatePaymentAlias();
+
     const project = await prisma.project.create({
       data: {
         userId,
         title: title || 'New Project',
         phoneNumber,
+        websiteType: websiteType || 'basic',
         description,
         textInput,
         logoUrl,
         photoUrls: JSON.stringify(photoUrls || []),
         voiceMemoUrl,
-        status: 'New',
+        status: 'NEW',
+        paymentAlias,
+        price,
       },
     });
 

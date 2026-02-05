@@ -52,13 +52,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // If status is "Completed" and previewUrl is provided, require payment
+    // If status is "PREVIEW" and previewUrl is provided, require payment
     let updateData: any = {
       status: status,
       updatedAt: new Date()
     };
 
-    if (status === 'Completed' && previewUrl) {
+    if (status === 'PREVIEW' && previewUrl) {
       // Project should already have a payment alias from creation
       let projectPaymentAlias = project.paymentAlias;
       if (!projectPaymentAlias) {
@@ -68,21 +68,15 @@ export async function POST(req: NextRequest) {
         updateData.paymentAlias = projectPaymentAlias;
       }
 
-      // Set payment deadline to 3 days from now
-      const paymentDeadline = new Date();
-      paymentDeadline.setDate(paymentDeadline.getDate() + 3);
-
       updateData.previewUrl = previewUrl;
       updateData.paymentRequired = true;
-      updateData.paymentStatus = 'Not Paid';
-      updateData.paymentDeadline = paymentDeadline;
+      updateData.paymentStatus = 'Required';
       
-      console.log('🎨 Project completed with preview URL - Payment required');
+      console.log('🎨 Project in preview - Payment required');
       console.log('  Project:', project.title || project.id);
       console.log('  Preview URL:', previewUrl);
       console.log('  Payment Alias:', projectPaymentAlias);
       console.log('  Price:', project.price, 'MAD');
-      console.log('  Payment Deadline:', paymentDeadline.toLocaleDateString());
 
       // Send email notification to user with preview
       try {

@@ -72,7 +72,7 @@ export default function RegisterPage() {
         email,
         password,
         redirect: true,
-        callbackUrl: '/en/dashboard',
+        callbackUrl: getPath('/dashboard'),
       });
 
       if (result?.error) {
@@ -118,7 +118,7 @@ export default function RegisterPage() {
       // Sign in with NextAuth using the email
       const result = await signIn('credentials', {
         redirect: true,
-        callbackUrl: '/en/dashboard',
+        callbackUrl: getPath('/dashboard'),
         email: firebaseUser.email,
         password: firebaseUser.uid, // Use UID as password for Firebase users
       });
@@ -150,7 +150,7 @@ export default function RegisterPage() {
     }
     
     try {
-      await signIn(provider, { callbackUrl: '/dashboard' });
+      await signIn(provider, { callbackUrl: getPath('/dashboard') });
     } catch (error) {
       setError(t('auth.somethingWrong'));
     }

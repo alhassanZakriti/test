@@ -20,7 +20,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, assignedTo } = body;
+    const { status, assignedTo, previewUrl } = body;
 
     // Get the current project data before updating
     const currentProject = await prisma.project.findUnique({
@@ -31,6 +31,7 @@ export async function PATCH(
             name: true,
             email: true,
             preferredLanguage: true,
+            phoneNumber: true,
           },
         },
       },
@@ -45,19 +46,34 @@ export async function PATCH(
 
     const oldStatus = currentProject.status;
 
+    // Prepare update data
+    const updateData: any = {
+      ...(assignedTo !== undefined && { assignedTo }),
+    };
+
+    // Handle status transitions
+    if (status) {
+      updateData.status = status;
+
+      // When status moves to PREVIEW, set preview URL and payment required
+      if (status === 'PREVIEW' && previewUrl) {
+        updateData.previewUrl = previewUrl;
+        updateData.paymentRequired = true;
+        updateData.paymentStatus = 'Pending';
+      }
+    }
+
     // Update the project
     const project = await prisma.project.update({
       where: { id: params.id },
-      data: {
-        ...(status && { status }),
-        ...(assignedTo !== undefined && { assignedTo }),
-      },
+      data: updateData,
       include: {
         user: {
           select: {
             name: true,
             email: true,
             preferredLanguage: true,
+            phoneNumber: true,
           },
         },
       },
@@ -122,9 +138,10 @@ export async function PATCH(
       try {
         if (currentProject.phoneNumber) {
           const statusEmojis: Record<string, string> = {
-            'New': '📬',
-            'In Progress': '🚀',
-            'Completed': '✅'
+            'NEW': '📬',
+            'IN_PROGRESS': '🚀',
+            'PREVIEW': '👀',
+            'COMPLETE': '✅'
           };
 
           const emoji = statusEmojis[status] || '🔔';
@@ -201,6 +218,64 @@ export async function GET(
     console.error('Error fetching project:', error);
     return NextResponse.json(
       { error: 'Er is iets misgegaan' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user || (session.user as any).role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized - Admin access required' },
+        { status: 401 }
+      );
+    }
+
+    // Check if project exists
+    const project = await prisma.project.findUnique({
+      where: { id: params.id },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the project (this will cascade delete related payment records)
+    await prisma.project.delete({
+      where: { id: params.id },
+    });
+
+    console.log(`🗑️ Project deleted: ${project.title} (ID: ${params.id}) by admin ${session.user.email}`);
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Project deleted successfully',
+      deletedProject: {
+        id: project.id,
+        title: project.title,
+      }
+    });
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete project' },
       { status: 500 }
     );
   }

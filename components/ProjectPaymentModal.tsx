@@ -8,13 +8,20 @@ import toast from 'react-hot-toast';
 interface ProjectPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isBlocking?: boolean; // Modal cannot be closed if true (for PREVIEW status)
   project: {
     id: string;
     title: string;
+    description?: string;
+    textInput?: string;
+    logoUrl?: string;
+    photoUrls?: string;
+    voiceMemoUrl?: string;
     price: number;
     previewUrl?: string;
     paymentStatus: string;
     rejectionCount?: number;
+    createdAt?: string;
   };
   paymentAlias: string;
   onPaymentSubmitted: () => void;
@@ -23,6 +30,7 @@ interface ProjectPaymentModalProps {
 export default function ProjectPaymentModal({
   isOpen,
   onClose,
+  isBlocking = false,
   project,
   paymentAlias,
   onPaymentSubmitted
@@ -50,6 +58,26 @@ export default function ProjectPaymentModal({
       setUploadProgress('');
     }
   }, [isOpen]);
+
+  // Prevent ESC key from closing modal when blocking
+  useEffect(() => {
+    if (isOpen && isBlocking) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          toast.error('⚠️ You must upload a payment receipt before continuing', {
+            duration: 4000,
+          });
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown, true);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown, true);
+      };
+    }
+  }, [isOpen, isBlocking]);
 
   const compressImage = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -335,8 +363,8 @@ export default function ProjectPaymentModal({
 
       if (response.ok) {
         setSuccess(true);
-        setUploadProgress('Receipt uploaded successfully!');
-        toast.success('✅ Payment receipt uploaded! Awaiting admin verification.', {
+        setUploadProgress('Payment verified! Project completed.');
+        toast.success('🎉 Payment verified! Your project is now complete!', {
           duration: 5000,
           style: {
             background: '#10B981',
@@ -366,21 +394,57 @@ export default function ProjectPaymentModal({
 
   if (!isOpen) return null;
 
+  // Handle onClose - if blocking, prevent close unless payment is submitted
+  const handleClose = () => {
+    if (isBlocking && project.paymentStatus !== 'Paid' && project.paymentStatus !== 'Pending') {
+      toast.error('⚠️ You must upload a payment receipt before continuing', {
+        duration: 4000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      });
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={(e) => {
+        // Prevent closing when clicking backdrop if blocking
+        if (e.target === e.currentTarget && !isBlocking) {
+          handleClose();
+        } else if (e.target === e.currentTarget && isBlocking) {
+          toast.error('⚠️ You must upload a payment receipt before continuing', {
+            duration: 4000,
+          });
+        }
+      }}
+    >
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Payment Required: {project.title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            disabled={uploading}
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Payment Required: {project.title}
+            </h2>
+            {isBlocking && (
+              <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                ⚠️ Payment is required to access your dashboard
+              </p>
+            )}
+          </div>
+          {!isBlocking && (
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-4"
+              disabled={uploading}
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
         </div>
 
         {/* Content */}
@@ -406,6 +470,82 @@ export default function ProjectPaymentModal({
               </a>
             </div>
           )}
+
+          {/* Project Details */}
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Project Details
+            </h3>
+            
+            {/* Description */}
+            {(project.description || project.textInput) && (
+              <div className="mb-3">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description:</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  {project.description || project.textInput}
+                </p>
+              </div>
+            )}
+
+            {/* Logo */}
+            {project.logoUrl && (
+              <div className="mb-3">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logo:</p>
+                <div className="flex justify-start">
+                  <img
+                    src={project.logoUrl}
+                    alt="Project Logo"
+                    className="h-16 w-auto object-contain rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-2"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Photos */}
+            {project.photoUrls && (() => {
+              try {
+                const photos = JSON.parse(project.photoUrls);
+                if (Array.isArray(photos) && photos.length > 0) {
+                  return (
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Photos ({photos.length}):
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {photos.map((photo: string, index: number) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`Project photo ${index + 1}`}
+                            className="w-full h-20 object-cover rounded border border-gray-300 dark:border-gray-600 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => window.open(photo, '_blank')}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (error) {
+                console.error('Error parsing photos:', error);
+              }
+              return null;
+            })()}
+
+            {/* Voice Memo */}
+            {project.voiceMemoUrl && (
+              <div className="mb-3">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voice Memo:</p>
+                <audio controls src={project.voiceMemoUrl} className="w-full" />
+              </div>
+            )}
+
+            {/* Creation Date */}
+            {project.createdAt && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Created: {new Date(project.createdAt).toLocaleDateString()}
+              </div>
+            )}
+          </div>
 
           {/* Payment Info */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
@@ -491,10 +631,13 @@ export default function ProjectPaymentModal({
           {project.paymentStatus === 'Pending' && (
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 flex items-start gap-3">
               <Loader2 className="w-5 h-5 text-orange-600 animate-spin flex-shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1">
                 <p className="font-medium text-orange-900 dark:text-orange-100">Payment Pending Verification</p>
                 <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  Your receipt has been uploaded and is waiting for admin verification. You&apos;ll receive an email once it&apos;s approved.
+                  A payment receipt has already been uploaded for this project and is waiting for admin verification. You&apos;ll receive an email once it&apos;s approved.
+                </p>
+                <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                  If you believe this is an error or need to update your receipt, please contact support.
                 </p>
               </div>
             </div>
@@ -725,24 +868,44 @@ export default function ProjectPaymentModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            disabled={uploading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          {!success && project.paymentStatus !== 'Pending' && project.paymentStatus !== 'Paid' && (
-            <button
-              onClick={handleUpload}
-              disabled={!selectedFile || uploading || processing || !extractedData}
-              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {uploading ? 'Uploading...' : 'Upload Receipt'}
-            </button>
-          )}
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between gap-3">
+          <div className="flex gap-3">
+            {isBlocking && (
+              <button
+                onClick={() => {
+                  // Sign out the user
+                  window.location.href = '/api/auth/signout';
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            )}
+            {!isBlocking && (
+              <button
+                onClick={handleClose}
+                disabled={uploading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            {!success && project.paymentStatus !== 'Pending' && project.paymentStatus !== 'Paid' && (
+              <button
+                onClick={handleUpload}
+                disabled={!selectedFile || uploading || processing || !extractedData}
+                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {uploading ? 'Uploading...' : 'Upload Receipt'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

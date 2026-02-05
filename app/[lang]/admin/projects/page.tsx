@@ -63,23 +63,39 @@ export default function AdminProjectsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'NEW':
+      case 'New':
       case 'Nieuw':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800';
+      case 'IN_PROGRESS':
+      case 'In Progress':
       case 'In Behandeling':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-800';
+      case 'PREVIEW':
+        return 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-800';
+      case 'COMPLETE':
+      case 'Completed':
       case 'Voltooid':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'NEW':
+      case 'New':
       case 'Nieuw':
         return <FiAlertCircle className="w-4 h-4" />;
+      case 'IN_PROGRESS':
+      case 'In Progress':
       case 'In Behandeling':
         return <FiClock className="w-4 h-4" />;
+      case 'PREVIEW':
+        return <FiEye className="w-4 h-4" />;
+      case 'COMPLETE':
+      case 'Completed':
       case 'Voltooid':
         return <FiCheckCircle className="w-4 h-4" />;
       default:
@@ -88,7 +104,13 @@ export default function AdminProjectsPage() {
   };
 
   const filteredProjects = projects.filter(project => {
-    const matchesFilter = filter === 'all' || project.status === filter;
+    const matchesFilter = filter === 'all' || (() => {
+      if (filter === 'NEW') return project.status === 'NEW' || project.status === 'New';
+      if (filter === 'IN_PROGRESS') return project.status === 'IN_PROGRESS' || project.status === 'In Progress';
+      if (filter === 'PREVIEW') return project.status === 'PREVIEW';
+      if (filter === 'COMPLETE') return project.status === 'COMPLETE' || project.status === 'Completed';
+      return project.status === filter;
+    })();
     const matchesSearch = 
       project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.textInput?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -99,9 +121,10 @@ export default function AdminProjectsPage() {
 
   const stats = {
     total: projects.length,
-    new: projects.filter(p => p.status === 'New').length,
-    inProgress: projects.filter(p => p.status === 'In Progress').length,
-    completed: projects.filter(p => p.status === 'Completed').length,
+    new: projects.filter(p => p.status === 'NEW' || p.status === 'New').length,
+    inProgress: projects.filter(p => p.status === 'IN_PROGRESS' || p.status === 'In Progress').length,
+    preview: projects.filter(p => p.status === 'PREVIEW').length,
+    completed: projects.filter(p => p.status === 'COMPLETE' || p.status === 'Completed').length,
   };
 
   return (
@@ -127,7 +150,7 @@ export default function AdminProjectsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -186,7 +209,24 @@ export default function AdminProjectsPage() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{t('common.completed')}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('admin.preview')}</p>
+              <p className="text-3xl font-bold text-purple-600">{stats.preview}</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-500 rounded-lg flex items-center justify-center">
+              <FiEye className="text-white" size={24} />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('admin.complete')}</p>
               <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-500 rounded-lg flex items-center justify-center">
@@ -220,9 +260,10 @@ export default function AdminProjectsPage() {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-modual-purple dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="all">{t('adminProjects.filterByStatus')}</option>
-              <option value="New">{t('common.new')}</option>
-              <option value="In Progress">{t('common.inProgress')}</option>
-              <option value="Completed">{t('common.completed')}</option>
+              <option value="NEW">{t('common.new')}</option>
+              <option value="IN_PROGRESS">{t('common.inProgress')}</option>
+              <option value="PREVIEW">{t('admin.preview')}</option>
+              <option value="COMPLETE">{t('admin.complete')}</option>
             </select>
           </div>
         </div>
@@ -264,7 +305,13 @@ export default function AdminProjectsPage() {
                     </div>
                     <span className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(project.status)}`}>
                       {getStatusIcon(project.status)}
-                      <span>{project.status}</span>
+                      <span>
+                        {project.status === 'NEW' || project.status === 'New' ? t('common.new') :
+                         project.status === 'IN_PROGRESS' || project.status === 'In Progress' ? t('common.inProgress') :
+                         project.status === 'PREVIEW' ? t('admin.preview') :
+                         project.status === 'COMPLETE' || project.status === 'Completed' ? t('admin.complete') :
+                         project.status}
+                      </span>
                     </span>
                   </div>
 
