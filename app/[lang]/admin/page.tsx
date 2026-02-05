@@ -75,6 +75,39 @@ export default function AdminDashboard() {
     }
   };
 
+  const updateWebsiteType = async (projectId: string, websiteType: string) => {
+    try {
+      const response = await fetch('/api/admin/projects/update-website-type', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          projectId, 
+          websiteType
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        await fetchProjects();
+        // Update selectedProject to reflect the change immediately
+        if (selectedProject && selectedProject.id === projectId) {
+          const newPrice = websiteType === 'ecommerce' ? 250 : 150;
+          setSelectedProject({ 
+            ...selectedProject, 
+            websiteType, 
+            price: newPrice 
+          });
+        }
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to update website type');
+      }
+    } catch (error) {
+      console.error('Error updating website type:', error);
+      alert('Failed to update website type');
+    }
+  };
+
   const deleteProject = async (projectId: string) => {
     setDeletingProject(projectId);
     try {
@@ -569,14 +602,35 @@ export default function AdminDashboard() {
                     <span>{selectedProject.phoneNumber}</span>
                   </p>
                 )}
-                {selectedProject.websiteType && (
-                  <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center space-x-2">
-                    <span>{selectedProject.websiteType === 'ecommerce' ? '🛒' : '🌐'}</span>
-                    <span className="font-medium">
-                      {selectedProject.websiteType === 'ecommerce' ? 'E-commerce' : 'Basic Website'} - {selectedProject.price} MAD
+                {/* Website Type Selector - Admin can change */}
+                <div className="mt-3 mb-2">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Website Type</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateWebsiteType(selectedProject.id, 'basic')}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        selectedProject.websiteType === 'basic'
+                          ? 'bg-gradient-modual text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      🌐 Basic Website
+                    </button>
+                    <button
+                      onClick={() => updateWebsiteType(selectedProject.id, 'ecommerce')}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        selectedProject.websiteType === 'ecommerce'
+                          ? 'bg-gradient-modual text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      🛒 E-commerce
+                    </button>
+                    <span className="text-modual-purple dark:text-modual-pink font-semibold ml-2">
+                      {selectedProject.price} MAD
                     </span>
-                  </p>
-                )}
+                  </div>
+                </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {new Date(selectedProject.createdAt).toLocaleDateString('nl-NL', {
                     year: 'numeric',
