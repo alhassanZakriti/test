@@ -91,7 +91,7 @@ export default function AdminDashboard() {
         await fetchProjects();
         // Update selectedProject to reflect the change immediately
         if (selectedProject && selectedProject.id === projectId) {
-          const newPrice = websiteType === 'ecommerce' ? 250 : 150;
+          const newPrice = websiteType === 'ecommerce' ? 200 : 150;
           setSelectedProject({ 
             ...selectedProject, 
             websiteType, 

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate new price based on website type
-    const price = websiteType === 'ecommerce' ? 250 : 150;
+    const price = websiteType === 'ecommerce' ? 200 : 150;
 
     // Update project website type and price
     const updatedProject = await prisma.project.update({
