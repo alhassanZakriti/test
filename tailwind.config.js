@@ -8,6 +8,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Cairo', 'sans-serif'],
+      },
       colors: {
         modual: {
           pink: '#E94B8A',

@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Cairo } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 import { Providers } from './providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const cairo = Cairo({ 
+  subsets: ['latin', 'arabic'],
+  weight: ['200', '300', '400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Modual - Build Your Own Website',
@@ -34,7 +38,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         />
         {/* End Google Tag Manager */}
       </head>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={cairo.className} suppressHydrationWarning>
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe
