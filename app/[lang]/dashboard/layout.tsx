@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SubscriptionGuard from '@/components/SubscriptionGuard';
 
 export default function DashboardLayout({
   children,
@@ -38,7 +39,9 @@ export default function DashboardLayout({
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 bg-gray-50 dark:bg-gray-900">
-        {children}
+        <SubscriptionGuard>
+          {children}
+        </SubscriptionGuard>
       </main>
       <Footer />
     </div>

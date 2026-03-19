@@ -8,8 +8,6 @@ import { motion } from 'framer-motion';
 import { FiPlus, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiUser, FiMail, FiPhone, FiCopy, FiDollarSign, FiExternalLink } from 'react-icons/fi';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLocalizedPath } from '@/lib/useLocalizedPath';
-import ProjectPaymentModal from '@/components/ProjectPaymentModal';
-import toast from 'react-hot-toast';
 
 interface Project {
   id: string;
@@ -24,10 +22,6 @@ interface Project {
   voiceMemoUrl?: string;
   status: string;
   previewUrl?: string;
-  paymentStatus?: string;
-  paymentRequired?: boolean;
-  paymentDeadline?: string;
-  paymentAlias?: string;
   createdAt: string;
   updatedAt?: string;
   user?: {
@@ -47,20 +41,6 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [paymentProject, setPaymentProject] = useState<Project | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [shownToasts, setShownToasts] = useState<Set<string>>(new Set());
-  const [previousProjects, setPreviousProjects] = useState<Project[]>([]);
-  
-  // Check if user is admin - admins have full access without payment restrictions
-  const isAdmin = session && (session.user as any).role === 'admin';
-
-  // Redirect if not authenticated
-  // useEffect(() => {
-  //   if (status === 'unauthenticated') {
-  //     router.push(`/${lang}/auth/inloggen`);
-  //   }
-  // }, [status, router, lang]);
 
   useEffect(() => {
     fetchProjects();
@@ -68,122 +48,6 @@ export default function DashboardPage() {
     const interval = setInterval(fetchProjects, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  // Auto-show payment modal for PREVIEW projects (blocking) - ONLY FOR CLIENTS, NOT ADMINS
-  useEffect(() => {
-    console.log('🔍 Auto-check PREVIEW: projects count =', projects.length, 'showPaymentModal =', showPaymentModal, 'isAdmin =', isAdmin);
-    
-    // Skip payment modal logic entirely if user is admin
-    if (isAdmin) {
-      console.log('👑 User is admin - skipping payment modal checks');
-      return;
-    }
-    
-    if (projects.length > 0 && !showPaymentModal) {
-      // Log all projects for debugging
-      console.log('📋 All projects:', projects.map(p => ({
-        id: p.id,
-        title: p.title,
-        status: p.status,
-        paymentStatus: p.paymentStatus,
-        paymentAlias: p.paymentAlias
-      })));
-      
-      // Find ANY project in PREVIEW status - prioritize this over everything
-      const previewProject = projects.find(project => project.status === 'PREVIEW');
-      
-      if (previewProject) {
-        console.log('🔒 PREVIEW project found - opening payment modal (blocking)', {
-          id: previewProject.id,
-          title: previewProject.title,
-          status: previewProject.status,
-          paymentStatus: previewProject.paymentStatus,
-          paymentAlias: previewProject.paymentAlias
-        });
-        setPaymentProject(previewProject);
-        setShowPaymentModal(true);
-      } else {
-        console.log('❌ No PREVIEW project found');
-        // Check for overdue projects only if no PREVIEW project exists
-        const overdueProject = projects.find(project => isPaymentOverdue(project));
-        if (overdueProject) {
-          console.log('⏰ Found overdue project instead:', overdueProject.title);
-          setPaymentProject(overdueProject);
-          setShowPaymentModal(true);
-        }
-      }
-    }
-  }, [projects, showPaymentModal, isAdmin]);
-
-  // Toast notifications for payment reminders - ONLY FOR CLIENTS, NOT ADMINS
-  useEffect(() => {
-    // Skip toast notifications if user is admin
-    if (isAdmin) return;
-    
-    if (projects.length > 0) {
-      projects.forEach(project => {
-        // Only show toast if not already shown in this session
-        if (project.paymentRequired && project.paymentStatus !== 'Paid' && !shownToasts.has(project.id)) {
-          const daysRemaining = getDaysRemaining(project.paymentDeadline);
-          
-          // Show toast for projects with payment due in 3 days or less
-          if (daysRemaining !== null && daysRemaining <= 3 && daysRemaining >= 0) {
-            toast((t) => (
-              <div 
-                onClick={() => {
-                  setPaymentProject(project);
-                  setShowPaymentModal(true);
-                  toast.dismiss(t.id);
-                }}
-                className="cursor-pointer"
-              >
-                <div className="font-semibold">💳 {project.title}</div>
-                <div className="text-sm mt-1">Payment due in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}</div>
-                <div className="text-xs mt-1 opacity-90">Click to pay {project.price || 150} MAD</div>
-              </div>
-            ), {
-              duration: 10000,
-              icon: '⏰',
-              style: {
-                background: '#F59E0B',
-                color: '#fff',
-              },
-            });
-            
-            // Mark this project's toast as shown
-            setShownToasts(prev => new Set(prev).add(project.id));
-          } 
-          // Show urgent toast for overdue payments
-          else if (daysRemaining !== null && daysRemaining < 0) {
-            toast((t) => (
-              <div 
-                onClick={() => {
-                  setPaymentProject(project);
-                  setShowPaymentModal(true);
-                  toast.dismiss(t.id);
-                }}
-                className="cursor-pointer"
-              >
-                <div className="font-semibold">🚨 {project.title}</div>
-                <div className="text-sm mt-1">Payment overdue by {Math.abs(daysRemaining)} {Math.abs(daysRemaining) === 1 ? 'day' : 'days'}!</div>
-                <div className="text-xs mt-1 opacity-90">Click to pay now - {project.price || 150} MAD</div>
-              </div>
-            ), {
-              duration: Infinity, // Don't auto-dismiss overdue payments
-              icon: '⚠️',
-              style: {
-                background: '#EF4444',
-                color: '#fff',
-              },
-            });
-            
-            // Mark this project's toast as shown
-            setShownToasts(prev => new Set(prev).add(project.id));
-          }
-        }
-      });
-    }
-  }, [projects, shownToasts, isAdmin]);
 
   const fetchProjects = async () => {
     try {
@@ -193,50 +57,6 @@ export default function DashboardPage() {
       const newProjects = data.projects || [];
       console.log('📦 Fetched', newProjects.length, 'projects');
       
-      // Detect newly completed projects that require payment
-      if (previousProjects.length > 0) {
-        newProjects.forEach((newProject: Project) => {
-          const oldProject = previousProjects.find(p => p.id === newProject.id);
-          
-          // Check if project just became completed and requires payment - ONLY FOR CLIENTS
-          if (
-            !isAdmin &&
-            newProject.status === 'Completed' &&
-            newProject.paymentRequired &&
-            newProject.paymentStatus !== 'Paid' &&
-            (!oldProject || oldProject.status !== 'Completed' || !oldProject.paymentRequired)
-          ) {
-            // Show immediate toast for newly completed project
-            toast((t) => (
-              <div 
-                onClick={() => {
-                  setPaymentProject(newProject);
-                  setShowPaymentModal(true);
-                  toast.dismiss(t.id);
-                }}
-                className="cursor-pointer"
-              >
-                <div className="font-semibold">🎉 {newProject.title} is Complete!</div>
-                <div className="text-sm mt-1">Your project is ready! Payment is now required.</div>
-                <div className="text-xs mt-1 opacity-90">Click to pay {newProject.price || 150} MAD now</div>
-              </div>
-            ), {
-              duration: 15000,
-              icon: '✅',
-              style: {
-                background: '#7C3AED',
-                color: '#fff',
-              },
-            });
-            
-            // Also open the modal automatically
-            setPaymentProject(newProject);
-            setShowPaymentModal(true);
-          }
-        });
-      }
-      
-      setPreviousProjects(newProjects);
       setProjects(newProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -254,16 +74,8 @@ export default function DashboardPage() {
       console.log('📦 Project data received:', data);
       const project = data.project;
       
-      // If project is in PREVIEW status and payment not yet made, open payment modal directly - ONLY FOR CLIENTS
-      if (!isAdmin && project.status === 'PREVIEW' && project.paymentStatus !== 'Paid' && project.paymentStatus !== 'Pending') {
-        console.log('💳 Opening payment modal for PREVIEW project');
-        setPaymentProject(project);
-        setShowPaymentModal(true);
-      } else {
-        // Otherwise, open the project detail modal
-        setSelectedProject(project);
-        console.log('✅ Modal should now open');
-      }
+      setSelectedProject(project);
+      console.log('✅ Modal should now open');
     } catch (error) {
       console.error('❌ Error fetching project details:', error);
     }
@@ -323,22 +135,6 @@ export default function DashboardPage() {
     }
   };
 
-  const getDaysRemaining = (deadline?: string) => {
-    if (!deadline) return null;
-    const now = new Date();
-    const deadlineDate = new Date(deadline);
-    const diffTime = deadlineDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const isPaymentOverdue = (project: Project) => {
-    if (!project.paymentRequired || project.paymentStatus === 'Paid') return false;
-    if (!project.paymentDeadline) return false;
-    const daysRemaining = getDaysRemaining(project.paymentDeadline);
-    return daysRemaining !== null && daysRemaining < 0;
-  };
-
   // Show loading state while checking auth
   if (status === 'loading') {
     return (
@@ -355,20 +151,12 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Blocking overlay when PREVIEW payment modal is open - ONLY FOR CLIENTS */}
-      {!isAdmin && showPaymentModal && paymentProject?.status === 'PREVIEW' && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 pointer-events-none" />
-      )}
-      
-      {/* Main content - blurred when blocking modal is open - ONLY FOR CLIENTS */}
-      <div className={`${!isAdmin && showPaymentModal && paymentProject?.status === 'PREVIEW' ? 'blur-sm pointer-events-none' : ''}`}>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('dashboard.welcomeBack')}, <span className="gradient-text">{session?.user?.name}</span>!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">{t('dashboard.manageProjects')}</p>
-        </div>
-
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {t('dashboard.welcomeBack')}, <span className="gradient-text">{session?.user?.name}</span>!
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">{t('dashboard.manageProjects')}</p>
+      </div>
 
       <div className="mb-8">
         <Link
@@ -464,47 +252,6 @@ export default function DashboardPage() {
                         <span>👀 View Preview</span>
                       </a>
                     )}
-                    
-                    {/* Payment Status - ONLY SHOW FOR CLIENTS, NOT ADMINS */}
-                    {!isAdmin && (
-                      project.paymentStatus === 'Pending' || project.paymentStatus === "pending" ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPaymentProject(project);
-                            setShowPaymentModal(true);
-                          }}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
-                        >
-                          <FiDollarSign size={14} />
-                          <span>💳 Upload Receipt - {project.price || 150} MAD</span>
-                        </button>
-                      ) : project.paymentStatus === 'Paid' ? (
-                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                          <FiCheckCircle size={14} />
-                          <span>Payment Verified ✓</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPaymentProject(project);
-                            setShowPaymentModal(true);
-                          }}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-modual text-white text-sm font-medium rounded-md transition-opacity hover:opacity-90 w-full justify-center"
-                        >
-                          <FiDollarSign size={14} />
-                          <span>💳 Upload Receipt - {project.price || 150} MAD</span>
-                        </button>
-                      )
-                    )}
-                    
-                    {/* Admin badge for admins viewing PREVIEW projects */}
-                    {isAdmin && (
-                      <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                        <span>👑 Admin Access - Full Visibility</span>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -593,76 +340,7 @@ export default function DashboardPage() {
                 </div>
                 
                 {/* Project Payment ID */}
-                {selectedProject.paymentAlias && (
-                  <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Project ID:</span>
-                    <span className="font-mono font-bold text-purple-700 dark:text-purple-300">
-                      {selectedProject.paymentAlias}
-                    </span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedProject.paymentAlias || '');
-                        alert('Project ID copied to clipboard!');
-                      }}
-                      className="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-200"
-                      title="Copy Project ID"
-                    >
-                      <FiCopy size={16} />
-                    </button>
-                  </div>
-                )}
               </div>
-
-              {/* Payment Deadline Info */}
-              {selectedProject.paymentRequired && selectedProject.paymentDeadline && (
-                <div className={`p-4 rounded-lg border-2 ${
-                  getDaysRemaining(selectedProject.paymentDeadline)! < 0 
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800'
-                    : getDaysRemaining(selectedProject.paymentDeadline)! <= 7
-                    ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-800'
-                    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-800'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className={`font-semibold ${
-                        getDaysRemaining(selectedProject.paymentDeadline)! < 0
-                          ? 'text-red-800 dark:text-red-200'
-                          : getDaysRemaining(selectedProject.paymentDeadline)! <= 7
-                          ? 'text-orange-800 dark:text-orange-200'
-                          : 'text-blue-800 dark:text-blue-200'
-                      }`}>
-                        {getDaysRemaining(selectedProject.paymentDeadline)! < 0
-                          ? '⚠️ Payment Overdue'
-                          : getDaysRemaining(selectedProject.paymentDeadline)! <= 7
-                          ? '⏰ Payment Due Soon'
-                          : '📅 Payment Deadline'}
-                      </h4>
-                      <p className={`text-sm mt-1 ${
-                        getDaysRemaining(selectedProject.paymentDeadline)! < 0
-                          ? 'text-red-700 dark:text-red-300'
-                          : getDaysRemaining(selectedProject.paymentDeadline)! <= 7
-                          ? 'text-orange-700 dark:text-orange-300'
-                          : 'text-blue-700 dark:text-blue-300'
-                      }`}>
-                        {getDaysRemaining(selectedProject.paymentDeadline)! < 0
-                          ? `Overdue by ${Math.abs(getDaysRemaining(selectedProject.paymentDeadline)!)} days`
-                          : `${getDaysRemaining(selectedProject.paymentDeadline)} days remaining`}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        Deadline: {new Date(selectedProject.paymentDeadline).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {selectedProject.paymentStatus !== 'Paid' && (
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                          {selectedProject.price || 150} MAD
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Monthly Payment</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Logo */}
               {selectedProject.logoUrl && (
@@ -776,47 +454,6 @@ export default function DashboardPage() {
             </div>
           </motion.div>
         </div>
-      )}
-      </div> {/* End of blurred content wrapper */}
-
-      {/* Project Payment Modal */}
-      {paymentProject && (
-        <ProjectPaymentModal
-          isOpen={showPaymentModal}
-          isBlocking={paymentProject.status === 'PREVIEW'}
-          onClose={() => {
-            console.log('🚪 Attempting to close modal, project status:', paymentProject.status);
-            // Only allow close if not a PREVIEW project
-            if (paymentProject.status !== 'PREVIEW' || 
-                paymentProject.paymentStatus === 'Paid' || 
-                paymentProject.paymentStatus === 'Pending') {
-              console.log('✅ Close allowed');
-              setShowPaymentModal(false);
-              setPaymentProject(null);
-            } else {
-              console.log('🔒 Close blocked - PREVIEW status requires payment');
-            }
-          }}
-          project={{
-            id: paymentProject.id,
-            title: paymentProject.title || 'Untitled Project',
-            description: paymentProject.description,
-            textInput: paymentProject.textInput,
-            logoUrl: paymentProject.logoUrl,
-            photoUrls: paymentProject.photoUrls,
-            voiceMemoUrl: paymentProject.voiceMemoUrl,
-            price: paymentProject.price || 150,
-            previewUrl: paymentProject.previewUrl,
-            paymentStatus: paymentProject.paymentStatus || 'Not Required',
-            createdAt: paymentProject.createdAt
-          }}
-          paymentAlias={paymentProject.paymentAlias || ''}
-          onPaymentSubmitted={() => {
-            fetchProjects();
-            setShowPaymentModal(false);
-            setPaymentProject(null);
-          }}
-        />
       )}
     </div>
   );

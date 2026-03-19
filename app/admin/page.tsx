@@ -573,11 +573,11 @@ export default function AdminDashboard() {
                               className="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer"
                               onClick={() => setEnlargedImage(photo)}
                             />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+                            {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
                               <span className="text-white opacity-0 group-hover:opacity-100 text-sm">
                                 {t('admin.clickToEnlarge')}
-                              </span>
-                            </div>
+                              </span> */}
+                            {/* </div> */}
                           </div>
                         ))}
                       </div>
@@ -612,34 +612,29 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Image Lightbox Modal */}
+      {/* Image Lightbox Modal - Positioned at root level with highest z-index */}
       {enlargedImage && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60] p-4"
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[100] p-4"
           onClick={() => setEnlargedImage(null)}
         >
-          <motion.div
+          <button
+            onClick={() => setEnlargedImage(null)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-3 z-10 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <motion.img
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
-          >
-            <button
-              onClick={() => setEnlargedImage(null)}
-              className="absolute top-4 right-4 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2 z-10"
-              aria-label="Close"
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={enlargedImage}
-              alt="Enlarged project photo"
-              className="max-w-full max-h-full object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </motion.div>
+            src={enlargedImage}
+            alt="Enlarged project photo"
+            className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

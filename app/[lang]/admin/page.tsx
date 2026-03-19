@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [deletingProject, setDeletingProject] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -748,9 +749,9 @@ export default function AdminDashboard() {
                               src={photo}
                               alt={`Project foto ${index + 1}`}
                               className="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer"
-                              onClick={() => window.open(photo, '_blank')}
+                              onClick={() => setEnlargedImage(photo)}
                             />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+                            <div onClick={() => setEnlargedImage(photo)} className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
                               <span className="text-white opacity-0 group-hover:opacity-100 text-sm">
                                 {t('admin.clickToEnlarge')}
                               </span>
@@ -849,6 +850,32 @@ export default function AdminDashboard() {
               </div>
             </div>
           </motion.div>
+        </div>
+      )}
+
+      {/* Image Lightbox Modal */}
+      {enlargedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[100] p-4"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <button
+            onClick={() => setEnlargedImage(null)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-3 z-10 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <motion.img
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            src={enlargedImage}
+            alt="Enlarged project photo"
+            className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

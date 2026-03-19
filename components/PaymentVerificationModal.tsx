@@ -24,13 +24,15 @@ interface PaymentVerificationModalProps {
   onClose: () => void;
   subscriptionStatus: SubscriptionStatus | null;
   onPaymentSubmitted: () => void;
+  isBlocking?: boolean; // Modal cannot be closed if true (for new users or expired subscriptions)
 }
 
 export default function PaymentVerificationModal({
   isOpen,
   onClose,
   subscriptionStatus,
-  onPaymentSubmitted
+  onPaymentSubmitted,
+  isBlocking = false
 }: PaymentVerificationModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -41,6 +43,29 @@ export default function PaymentVerificationModal({
   const [success, setSuccess] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [validationResult, setValidationResult] = useState<any>(null);
+
+  // Prevent closing the modal if it's blocking
+  const handleClose = () => {
+    if (isBlocking && !success) {
+      // Show a toast or warning that payment is required
+      return;
+    }
+    onClose();
+  };
+
+  // Prevent ESC key from closing modal when blocking
+  useEffect(() => {
+    if (isBlocking && isOpen) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown, true);
+      return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }
+  }, [isBlocking, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -367,30 +392,46 @@ export default function PaymentVerificationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Payment Verification Required
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {subscriptionStatus?.status === 'Expired' 
-                ? 'Your subscription has expired. Please upload your payment receipt.'
-                : subscriptionStatus?.status === 'Pending Verification'
-                ? 'Your payment is being verified by our team.'
-                : 'Please upload your payment receipt to continue using the platform.'}
-            </p>
+    <>
+      {/* Blocking overlay for visual effect */}
+      {isBlocking && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+          onClick={(e) => e.preventDefault()}
+        />
+      )}
+      
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Payment Verification Required
+                {isBlocking && (
+                  <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">
+                    ⚠️ Payment is required to access your dashboard
+                  </span>
+                )}
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {subscriptionStatus?.status === 'Expired' 
+                  ? 'Your subscription has expired. Please upload your payment receipt.'
+                  : subscriptionStatus?.status === 'Pending Verification'
+                  ? 'Your payment is being verified by our team.'
+                  : 'Please upload your payment receipt to continue using the platform.'}
+              </p>
+            </div>
+            {!isBlocking && (
+              <button
+                onClick={handleClose}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                disabled={uploading}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            )}
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            disabled={uploading}
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
@@ -681,13 +722,15 @@ export default function PaymentVerificationModal({
         {/* Footer */}
         {!success && subscriptionStatus?.status !== 'Pending Verification' && (
           <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-              disabled={uploading}
-            >
-              Cancel
-            </button>
+            {!isBlocking && (
+              <button
+                onClick={handleClose}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                disabled={uploading}
+              >
+                Cancel
+              </button>
+            )}
             <div className="flex flex-col items-end gap-2">
               {uploadProgress && (
                 <p className="text-sm text-blue-600 dark:text-blue-400">
@@ -716,5 +759,6 @@ export default function PaymentVerificationModal({
         )}
       </div>
     </div>
+    </>
   );
 }

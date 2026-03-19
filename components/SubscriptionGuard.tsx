@@ -77,6 +77,14 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
 
   const handleCloseModal = () => {
     // Only allow closing if payment is not urgently needed
+    // For new users or expired subscriptions, modal is blocking
+    const isBlocking = subscriptionStatus?.daysRemaining !== undefined && subscriptionStatus.daysRemaining <= 0;
+    
+    if (isBlocking && subscriptionStatus?.status !== 'Pending Verification') {
+      // Modal cannot be closed - payment is required
+      return;
+    }
+    
     if (subscriptionStatus?.daysRemaining && subscriptionStatus.daysRemaining > 0) {
       setShowModal(false);
     } else if (subscriptionStatus?.status === 'Pending Verification') {
@@ -92,14 +100,29 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
     );
   }
 
+  // Determine if modal should be blocking (cannot be closed)
+  // Blocking if: new user (daysRemaining <= 0) or expired subscription
+  const isBlocking = subscriptionStatus?.daysRemaining !== undefined && 
+                      subscriptionStatus.daysRemaining <= 0 &&
+                      subscriptionStatus.status !== 'Pending Verification';
+
   return (
     <>
-      {children}
+      {/* Blur dashboard content if payment modal is blocking */}
+      {showModal && isBlocking && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" />
+      )}
+      
+      <div className={showModal && isBlocking ? 'blur-sm pointer-events-none' : ''}>
+        {children}
+      </div>
+      
       <PaymentVerificationModal
         isOpen={showModal}
         onClose={handleCloseModal}
         subscriptionStatus={subscriptionStatus}
         onPaymentSubmitted={handlePaymentSubmitted}
+        isBlocking={isBlocking}
       />
     </>
   );
