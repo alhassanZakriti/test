@@ -12,16 +12,10 @@ interface ProjectPaymentModalProps {
   project: {
     id: string;
     title: string;
-    description?: string;
-    textInput?: string;
-    logoUrl?: string;
-    photoUrls?: string;
-    voiceMemoUrl?: string;
     price: number;
     previewUrl?: string;
     paymentStatus: string;
     rejectionCount?: number;
-    createdAt?: string;
   };
   paymentAlias: string;
   onPaymentSubmitted: () => void;
@@ -470,82 +464,6 @@ export default function ProjectPaymentModal({
               </a>
             </div>
           )}
-
-          {/* Project Details */}
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              Project Details
-            </h3>
-            
-            {/* Description */}
-            {(project.description || project.textInput) && (
-              <div className="mb-3">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description:</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                  {project.description || project.textInput}
-                </p>
-              </div>
-            )}
-
-            {/* Logo */}
-            {project.logoUrl && (
-              <div className="mb-3">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logo:</p>
-                <div className="flex justify-start">
-                  <img
-                    src={project.logoUrl}
-                    alt="Project Logo"
-                    className="h-16 w-auto object-contain rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-2"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Photos */}
-            {project.photoUrls && (() => {
-              try {
-                const photos = JSON.parse(project.photoUrls);
-                if (Array.isArray(photos) && photos.length > 0) {
-                  return (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Photos ({photos.length}):
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {photos.map((photo: string, index: number) => (
-                          <img
-                            key={index}
-                            src={photo}
-                            alt={`Project photo ${index + 1}`}
-                            className="w-full h-20 object-cover rounded border border-gray-300 dark:border-gray-600 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => window.open(photo, '_blank')}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-              } catch (error) {
-                console.error('Error parsing photos:', error);
-              }
-              return null;
-            })()}
-
-            {/* Voice Memo */}
-            {project.voiceMemoUrl && (
-              <div className="mb-3">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voice Memo:</p>
-                <audio controls src={project.voiceMemoUrl} className="w-full" />
-              </div>
-            )}
-
-            {/* Creation Date */}
-            {project.createdAt && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Created: {new Date(project.createdAt).toLocaleDateString()}
-              </div>
-            )}
-          </div>
 
           {/* Payment Info */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
