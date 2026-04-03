@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Upload, CheckCircle, AlertCircle, Loader2, Check, XCircle } from 'lucide-react';
+import { X, Upload, CheckCircle, AlertCircle, Loader2, Check, XCircle, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { createWorker } from 'tesseract.js';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Locale, locales, localeFlags, localeNames } from '@/lib/i18n';
+import { signOut } from 'next-auth/react';
 
 interface SubscriptionStatus {
   needsPayment: boolean;
@@ -34,6 +37,7 @@ export default function PaymentVerificationModal({
   onPaymentSubmitted,
   isBlocking = false
 }: PaymentVerificationModalProps) {
+  const { t, locale, setLocale } = useLanguage();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -43,6 +47,7 @@ export default function PaymentVerificationModal({
   const [success, setSuccess] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [validationResult, setValidationResult] = useState<any>(null);
+  const [showLangMenu, setShowLangMenu] = useState(false);
 
   // Prevent closing the modal if it's blocking
   const handleClose = () => {
@@ -404,116 +409,177 @@ export default function PaymentVerificationModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Payment Verification Required
-                {isBlocking && (
-                  <span className="ml-2 text-sm font-normal text-red-600 dark:text-red-400">
-                    ⚠️ Payment is required to access your dashboard
-                  </span>
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('paymentModal.title')}
+                  <br/>
+                  {isBlocking && (
+                    <span className=" text-sm font-normal text-red-600  dark:text-red-400">
+                      {t('paymentModal.blockingWarning')}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {subscriptionStatus?.status === 'Expired' 
+                    ? t('paymentModal.expiredMessage')
+                    : subscriptionStatus?.status === 'Pending Verification'
+                    ? t('paymentModal.pendingMessage')
+                    : t('paymentModal.defaultMessage')}
+                </p>
+              </div>
+              
+              {/* Language Toggle */}
+              <div className="relative ml-4">
+                <button
+                  onClick={() => setShowLangMenu(!showLangMenu)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-xl">{localeFlags[locale]}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{localeNames[locale]}</span>
+                </button>
+                {showLangMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                    {locales.map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setLocale(lang);
+                          setShowLangMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                          locale === lang ? 'bg-purple-50 dark:bg-purple-900/20' : ''
+                        }`}
+                      >
+                        <span className="text-xl">{localeFlags[lang]}</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{localeNames[lang]}</span>
+                      </button>
+                    ))}
+                  </div>
                 )}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {subscriptionStatus?.status === 'Expired' 
-                  ? 'Your subscription has expired. Please upload your payment receipt.'
-                  : subscriptionStatus?.status === 'Pending Verification'
-                  ? 'Your payment is being verified by our team.'
-                  : 'Please upload your payment receipt to continue using the platform.'}
-              </p>
+              </div>
+              
+              {!isBlocking && (
+                <button
+                  onClick={handleClose}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-4"
+                  disabled={uploading}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              )}
             </div>
-            {!isBlocking && (
-              <button
-                onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                disabled={uploading}
-              >
-                <X className="w-6 h-6" />
-              </button>
-            )}
+
+            {/* Deposit Notice */}
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-lg text-gray-700 dark:text-gray-300 font-[800] leading-relaxed">
+                    {t('paymentModal.depositNotice')}
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-md font-bold text-blue-700 dark:text-blue-400">50</span>
+                    <span className="text-md font-semibold text-gray-900 dark:text-white">Dirham, </span>
+                    <span className="text-md text-white  ">{t('paymentModal.depositAmount').replace('50 Dirham', '').replace('Therefore, we ask for a small initial contribution of', 'initial contribution required').trim()}</span>
+                  </div>
+                  <p className="text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                    {t('paymentModal.depositCredit')}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Subscription Info */}
-          {subscriptionStatus && (
+          {/* {subscriptionStatus && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                Subscription Information
+                {t('paymentModal.subscriptionInfo')}
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-blue-700 dark:text-blue-300">Status:</span>
+                  <span className="text-blue-700 dark:text-blue-300">{t('paymentModal.status')}:</span>
                   <span className="font-medium text-blue-900 dark:text-blue-100">
                     {subscriptionStatus.status}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-700 dark:text-blue-300">Days Remaining:</span>
+                  <span className="text-blue-700 dark:text-blue-300">{t('paymentModal.daysRemaining')}:</span>
                   <span className="font-medium text-blue-900 dark:text-blue-100">
-                    {subscriptionStatus.daysRemaining} days
+                    {subscriptionStatus.daysRemaining} {t('paymentModal.days')}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-700 dark:text-blue-300">Payment Reference:</span>
+                  <span className="text-blue-700 dark:text-blue-300">{t('paymentModal.paymentReference')}:</span>
                   <span className="font-mono font-bold text-blue-900 dark:text-blue-100">
                     {subscriptionStatus.paymentAlias}
                   </span>
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Payment Instructions */}
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
             <h3 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-              Payment Instructions
+              {t('paymentModal.paymentInstructions')}
             </h3>
             <ol className="list-decimal list-inside space-y-1 text-sm text-yellow-800 dark:text-yellow-200">
-              <li>Make a bank transfer to our CIH account</li>
-              <li>Use <strong className="font-mono">{subscriptionStatus?.paymentAlias}</strong> as payment reference (Motif)</li>
-              <li>Download the receipt from your banking app</li>
-              <li>Upload the receipt image below</li>
-              <li>Wait for admin verification (usually within 24 hours)</li>
+              <li>{t('paymentModal.instruction1')}</li>
+              <li>{t('common.use')} <strong className="font-mono">{subscriptionStatus?.paymentAlias}</strong> {t('paymentModal.instruction2')}</li>
+              <li>{t('paymentModal.instruction3')}</li>
+              <li>{t('paymentModal.instruction4')}</li>
+              <li>{t('paymentModal.instruction5')}</li>
             </ol>
           </div>
 
           {/* Bank Details */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-5">
             <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
-              🏦 Bank Account Details
+              🏦 {t('paymentModal.bankDetails')}
             </h3>
             <div className="space-y-2.5 text-sm bg-white/50 dark:bg-gray-800/50 rounded-lg p-4">
               <div className="flex justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">Bank Name:</span>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.bankName')}:</span>
                 <span className="font-semibold text-blue-900 dark:text-blue-100">CIH Bank</span>
               </div>
               <div className="flex justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">Account Number:</span>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.accountNumber')}:</span>
                 <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">230 780 214522050000 51 91</span>
               </div>
               <div className="flex justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">Account Holder:</span>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.accountHolder')}:</span>
                 <span className="font-semibold text-blue-900 dark:text-blue-100">MODUAL TECH</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">Payment Reference:</span>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.paymentReference')}:</span>
                 <span className="font-mono font-bold text-lg text-blue-900 dark:text-blue-100">{subscriptionStatus?.paymentAlias}</span>
               </div>
             </div>
             <div className="mt-3 text-xs text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded p-2 flex items-start gap-2">
               <span className="text-base">⚠️</span>
-              <span>Important: Make sure to include <strong className="font-mono">{subscriptionStatus?.paymentAlias}</strong> in the &quot;Motif&quot; field when making the transfer.</span>
+              <span>{t('paymentModal.importantNote')} <strong className="font-mono">{subscriptionStatus?.paymentAlias}</strong> {t('paymentModal.importantNote2')}</span>
             </div>
           </div>
 
           {/* Support Contact */}
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-5">
             <h3 className="font-bold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
-              💬 Need Help or Want Modifications?
+              💬 {t('paymentModal.supportTitle')}
             </h3>
             <p className="text-sm text-green-800 dark:text-green-200 mb-3">
-              If you have questions about the payment process or subscription, contact us:
+              {t('paymentModal.supportDescription')}
             </p>
             <div className="space-y-2.5 bg-white/50 dark:bg-gray-800/50 rounded-lg p-4">
               <div className="flex items-center gap-3">
@@ -523,7 +589,7 @@ export default function PaymentVerificationModal({
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">WhatsApp</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">{t('paymentModal.supportWhatsApp')}</p>
                   <a 
                     href="https://wa.me/212637655794" 
                     target="_blank" 
@@ -541,7 +607,7 @@ export default function PaymentVerificationModal({
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">Email</p>
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">{t('paymentModal.supportEmail')}</p>
                   <a 
                     href="mailto:info@modual.ma" 
                     className="text-sm font-semibold text-green-900 dark:text-green-100 hover:underline"
@@ -552,7 +618,7 @@ export default function PaymentVerificationModal({
               </div>
             </div>
             <div className="mt-3 text-xs text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 rounded p-2">
-              ⏰ We typically respond within 24 hours. Feel free to reach out anytime!
+              ⏰ {t('paymentModal.supportResponse')}
             </div>
           </div>
 
@@ -613,7 +679,7 @@ export default function PaymentVerificationModal({
           {!success && subscriptionStatus?.status !== 'Pending Verification' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Upload Payment Receipt
+                {t('paymentModal.uploadLabel')}
               </label>
               
               {!previewUrl ? (
@@ -621,10 +687,10 @@ export default function PaymentVerificationModal({
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-12 h-12 text-gray-400 mb-3" />
                     <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
+                      <span className="font-semibold">{t('paymentModal.clickToUpload')}</span> {t('paymentModal.dragAndDrop')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      PNG, JPG or JPEG (MAX. 10MB - Automatically compressed)
+                      {t('paymentModal.fileFormats')}
                     </p>
                   </div>
                   <input
@@ -640,7 +706,7 @@ export default function PaymentVerificationModal({
                   <div className="relative w-full h-64 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
                     <Image
                       src={previewUrl}
-                      alt="Receipt preview"
+                      alt={t('paymentModal.receiptPreview')}
                       fill
                       className="object-contain"
                     />
@@ -655,7 +721,7 @@ export default function PaymentVerificationModal({
                     className="text-sm text-red-600 hover:text-red-700 dark:text-red-400"
                     disabled={uploading || processing}
                   >
-                    Remove and select different image
+                    {t('paymentModal.removeImage')}
                   </button>
 
                   {/* Processing Indicator */}
@@ -663,7 +729,7 @@ export default function PaymentVerificationModal({
                     <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
                       <span className="text-sm text-blue-700 dark:text-blue-300">
-                        Extracting information from receipt...
+                        {t('paymentModal.extractingInfo')}
                       </span>
                     </div>
                   )}
@@ -673,16 +739,16 @@ export default function PaymentVerificationModal({
                     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-600" />
-                        Extracted Information
+                        {t('paymentModal.extractedInfo')}
                       </h3>
                       
                       <div className="space-y-2">
                         {/* Payment Reference */}
                         <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                           <div className="flex-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Payment Reference:</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{t('paymentModal.paymentReference')}:</span>
                             <p className="text-sm font-mono font-medium text-gray-900 dark:text-white">
-                              {extractedData.motif || 'Not found'}
+                              {extractedData.motif || t('paymentModal.notFound')}
                             </p>
                           </div>
                           {validationResult && (
@@ -690,12 +756,12 @@ export default function PaymentVerificationModal({
                               {validationResult.motifMatch ? (
                                 <>
                                   <Check className="w-4 h-4 text-green-600" />
-                                  <span className="text-xs text-green-600 font-medium">Match</span>
+                                  <span className="text-xs text-green-600 font-medium">{t('paymentModal.match')}</span>
                                 </>
                               ) : (
                                 <>
                                   <XCircle className="w-4 h-4 text-red-600" />
-                                  <span className="text-xs text-red-600 font-medium">No Match</span>
+                                  <span className="text-xs text-red-600 font-medium">{t('paymentModal.noMatch')}</span>
                                 </>
                               )}
                             </div>
@@ -705,9 +771,9 @@ export default function PaymentVerificationModal({
                         {/* Amount */}
                         <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                           <div className="flex-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Amount:</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{t('paymentModal.amount')}:</span>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {extractedData.amount ? `${extractedData.amount} MAD` : 'Not found'}
+                              {extractedData.amount ? `${extractedData.amount} MAD` : t('paymentModal.notFound')}
                             </p>
                           </div>
                           {validationResult && (
@@ -715,12 +781,12 @@ export default function PaymentVerificationModal({
                               {validationResult.amountMatch ? (
                                 <>
                                   <Check className="w-4 h-4 text-green-600" />
-                                  <span className="text-xs text-green-600 font-medium">Match</span>
+                                  <span className="text-xs text-green-600 font-medium">{t('paymentModal.match')}</span>
                                 </>
                               ) : (
                                 <>
                                   <XCircle className="w-4 h-4 text-red-600" />
-                                  <span className="text-xs text-red-600 font-medium">No Match</span>
+                                  <span className="text-xs text-red-600 font-medium">{t('paymentModal.noMatch')}</span>
                                 </>
                               )}
                             </div>
@@ -730,9 +796,9 @@ export default function PaymentVerificationModal({
                         {/* Date */}
                         <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                           <div className="flex-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">Transaction Date:</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{t('paymentModal.transactionDate')}:</span>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {extractedData.date ? new Date(extractedData.date).toLocaleDateString() : 'Not found'}
+                              {extractedData.date ? new Date(extractedData.date).toLocaleDateString() : t('paymentModal.notFound')}
                             </p>
                           </div>
                           {validationResult && extractedData.date && (
@@ -740,12 +806,12 @@ export default function PaymentVerificationModal({
                               {validationResult.dateMatch ? (
                                 <>
                                   <Check className="w-4 h-4 text-green-600" />
-                                  <span className="text-xs text-green-600 font-medium">Valid</span>
+                                  <span className="text-xs text-green-600 font-medium">{t('paymentModal.valid')}</span>
                                 </>
                               ) : (
                                 <>
                                   <XCircle className="w-4 h-4 text-red-600" />
-                                  <span className="text-xs text-red-600 font-medium">Invalid</span>
+                                  <span className="text-xs text-red-600 font-medium">{t('paymentModal.invalid')}</span>
                                 </>
                               )}
                             </div>
@@ -763,7 +829,7 @@ export default function PaymentVerificationModal({
                           }`}>
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                Validation Confidence:
+                                {t('paymentModal.validationConfidence')}:
                               </span>
                               <span className={`text-sm font-bold ${
                                 validationResult.confidenceScore >= 80 
@@ -777,13 +843,13 @@ export default function PaymentVerificationModal({
                             </div>
                             <div className="text-xs text-gray-600 dark:text-gray-400">
                               {validationResult.confidenceScore >= 80 && (
-                                <p>✓ All information matches expected values and date is within last month</p>
+                                <p>✓ {t('paymentModal.validationHigh')}</p>
                               )}
                               {validationResult.confidenceScore >= 50 && validationResult.confidenceScore < 80 && (
-                                <p>⚠️ Some information doesn&apos;t match or date is invalid (too old or future date). Admin will verify manually.</p>
+                                <p>⚠️ {t('paymentModal.validationMedium')}</p>
                               )}
                               {validationResult.confidenceScore < 50 && (
-                                <p>✗ Multiple mismatches detected or invalid date. Please ensure you uploaded the correct and recent receipt (within last month).</p>
+                                <p>✗ {t('paymentModal.validationLow')}</p>
                               )}
                             </div>
                           </div>
@@ -806,7 +872,7 @@ export default function PaymentVerificationModal({
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                 disabled={uploading}
               >
-                Cancel
+                {t('paymentModal.cancel')}
               </button>
             )}
             <div className="flex flex-col items-end gap-2">
@@ -823,18 +889,29 @@ export default function PaymentVerificationModal({
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Processing...
+                    {t('paymentModal.processing')}
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4" />
-                    Upload Receipt
+                    {t('paymentModal.uploadReceipt')}
                   </>
                 )}
               </button>
             </div>
           </div>
         )}
+
+        {/* Logout */}
+        <div className="flex items-center justify-center p-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            {t('nav.logout')}
+          </button>
+        </div>
       </div>
     </div>
     </>
