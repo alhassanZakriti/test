@@ -416,7 +416,7 @@ export default function PaymentVerificationModal({
                   onClick={() => setShowLangMenu(!showLangMenu)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
-                  <span className="text-xl">{localeFlags[locale]}</span>
+                  <span className="text-xl  text-gray-700 dark:text-gray-300">{localeFlags[locale]}</span>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{localeNames[locale]}</span>
                 </button>
                 {showLangMenu && (
@@ -432,7 +432,7 @@ export default function PaymentVerificationModal({
                           locale === lang ? 'bg-purple-50 dark:bg-purple-900/20' : ''
                         }`}
                       >
-                        <span className="text-xl">{localeFlags[lang]}</span>
+                        <span className="text-xl text-gray-700 dark:text-gray-300">{localeFlags[lang]}</span>
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{localeNames[lang]}</span>
                       </button>
                     ))}
@@ -483,10 +483,8 @@ export default function PaymentVerificationModal({
                   <p className="text-lg text-gray-700 dark:text-gray-300 font-[800] leading-relaxed">
                     {t('paymentModal.depositNotice')}
                   </p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-md font-bold text-blue-700 dark:text-blue-400">50</span>
-                    <span className="text-md font-semibold text-gray-900 dark:text-white">Dirham, </span>
-                    <span className="text-md text-gray-900 dark:text-white  ">{t('paymentModal.depositAmount').replace('50 Dirham', '').replace('Therefore, we ask for a small initial contribution of', 'initial contribution required').trim()}</span>
+                  <div className=" items-baseline gap-2 text-md font-semibold text-gray-900 dark:text-white">
+                    {t('paymentModal.depositAmount')}{" "} <span className="text-md font-bold text-blue-700 dark:text-blue-400">{t('paymentModal.50Dirham')}</span>
                   </div>
                   <p className="text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">

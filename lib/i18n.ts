@@ -15,7 +15,7 @@ export const localeFlags: Record<Locale, string> = {
   en: '🇬🇧',
   nl: '🇳🇱',
   fr: '🇫🇷',
-  ar: '🇸🇦',
+  ar: '🇲🇦',
 };
 
 export function isRTL(locale: Locale): boolean {
