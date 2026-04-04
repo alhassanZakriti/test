@@ -410,28 +410,8 @@ export default function PaymentVerificationModal({
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {t('paymentModal.title')}
-                  <br/>
-                  {isBlocking && (
-                    <span className=" text-sm font-normal text-red-600  dark:text-red-400">
-                      {t('paymentModal.blockingWarning')}
-                    </span>
-                  )}
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {subscriptionStatus?.status === 'Expired' 
-                    ? t('paymentModal.expiredMessage')
-                    : subscriptionStatus?.status === 'Pending Verification'
-                    ? t('paymentModal.pendingMessage')
-                    : t('paymentModal.defaultMessage')}
-                </p>
-              </div>
-              
               {/* Language Toggle */}
-              <div className="relative ml-4">
+              <div className="flex relative justify-center mx-auto">
                 <button
                   onClick={() => setShowLangMenu(!showLangMenu)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -440,7 +420,7 @@ export default function PaymentVerificationModal({
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{localeNames[locale]}</span>
                 </button>
                 {showLangMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                  <div className="absolute  mt-[3em] w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                     {locales.map((lang) => (
                       <button
                         key={lang}
@@ -459,6 +439,26 @@ export default function PaymentVerificationModal({
                   </div>
                 )}
               </div>
+            <div className="flex items-center mt-4 justify-between">
+              <div className="flex-1">
+                <h2 className="text-2xl text-center font-bold text-gray-900 dark:text-white">
+                  {t('paymentModal.title')}
+                  <br/>
+                  {isBlocking && (
+                    <span className=" text-sm font-normal text-red-600  dark:text-red-400">
+                      {t('paymentModal.blockingWarning')}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-center text-gray-600 dark:text-gray-400 mt-1">
+                  {subscriptionStatus?.status === 'Expired' 
+                    ? t('paymentModal.expiredMessage')
+                    : subscriptionStatus?.status === 'Pending Verification'
+                    ? t('paymentModal.pendingMessage')
+                    : t('paymentModal.defaultMessage')}
+                </p>
+              </div>
+              
               
               {!isBlocking && (
                 <button
@@ -549,21 +549,21 @@ export default function PaymentVerificationModal({
             <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
               🏦 {t('paymentModal.bankDetails')}
             </h3>
-            <div className="space-y-2.5 text-sm bg-white/50 dark:bg-gray-800/50 rounded-lg p-4">
-              <div className="flex justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.bankName')}:</span>
+            <div className="space-y-2.5  text-sm bg-white/50 dark:bg-gray-800/50 rounded-lg p-4">
+              <div className="flex flex-col justify-between lt-sm:flex-row items-center border-b border-blue-100 dark:border-blue-800 pb-2">
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.bankName')}</span>
                 <span className="font-semibold text-blue-900 dark:text-blue-100">CIH Bank</span>
               </div>
-              <div className="flex justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.accountNumber')}:</span>
+              <div className="flex flex-col lt-sm:flex-row justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.accountNumber')}</span>
                 <span className="font-mono font-semibold text-blue-900 dark:text-blue-100">230 780 214522050000 51 91</span>
               </div>
-              <div className="flex justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.accountHolder')}:</span>
+              <div className="flex flex-col lt-sm:flex-row justify-between items-center border-b border-blue-100 dark:border-blue-800 pb-2">
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.accountHolder')}</span>
                 <span className="font-semibold text-blue-900 dark:text-blue-100">MODUAL TECH</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.paymentReference')}:</span>
+              <div className="flex flex-col lt-sm:flex-row justify-between items-center">
+                <span className="text-blue-700 dark:text-blue-300 font-medium">{t('paymentModal.paymentReference')}</span>
                 <span className="font-mono font-bold text-lg text-blue-900 dark:text-blue-100">{subscriptionStatus?.paymentAlias}</span>
               </div>
             </div>
