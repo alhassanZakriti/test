@@ -486,7 +486,7 @@ export default function PaymentVerificationModal({
                   <div className="flex items-baseline gap-2">
                     <span className="text-md font-bold text-blue-700 dark:text-blue-400">50</span>
                     <span className="text-md font-semibold text-gray-900 dark:text-white">Dirham, </span>
-                    <span className="text-md text-white  ">{t('paymentModal.depositAmount').replace('50 Dirham', '').replace('Therefore, we ask for a small initial contribution of', 'initial contribution required').trim()}</span>
+                    <span className="text-md text-gray-900 dark:text-white  ">{t('paymentModal.depositAmount').replace('50 Dirham', '').replace('Therefore, we ask for a small initial contribution of', 'initial contribution required').trim()}</span>
                   </div>
                   <p className="text-sm text-green-700 dark:text-green-400 font-medium flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
