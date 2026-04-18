@@ -22,7 +22,7 @@ An admin profile has been created and seeded into the database!
 #### Admin Credentials:
 ```
 📧 Email: admin@modual.nl
-🔒 Password: Admin123!
+🔒 Password: M0du@l#2026$ecure!
 ```
 
 ⚠️ **IMPORTANT**: Change this password after first login!
@@ -98,7 +98,7 @@ Complete admin dashboard with project management capabilities!
    ```
    URL: http://localhost:3000/auth/inloggen
    Email: admin@modual.nl
-   Password: Admin123!
+   Password: M0du@l#2026$ecure!
    ```
 
 2. **Access Admin Dashboard**:
@@ -230,7 +230,7 @@ You can:
 
 **Login Credentials**:
 - Email: admin@modual.nl
-- Password: Admin123!
+- Password: M0du@l#2026$ecure!
 
 **Features**:
 - Dashboard with statistics
@@ -245,7 +245,7 @@ You can:
 1. **Change Admin Password**:
    - Login as admin
    - Go to profile settings
-   - Change password from "Admin123!"
+   - Change password from "M0du@l#2026$ecure!"
 
 2. **File Size Limits**:
    - Images: Max 4MB each
@@ -309,6 +309,6 @@ pnpm dev
 Visit:
 - **Homepage**: http://localhost:3000
 - **Admin Dashboard**: http://localhost:3000/admin
-- **Admin Login**: admin@modual.nl / Admin123!
+- **Admin Login**: admin@modual.nl / M0du@l#2026$ecure!
 
 🎉 **Enjoy your new admin dashboard with base64 file storage!**

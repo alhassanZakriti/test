@@ -175,7 +175,7 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const hashedPassword = await bcrypt.hash('Admin123456', 10);
+  const hashedPassword = await bcrypt.hash('M@nag3r#2026$ecure!', 10);
 
   const admin = await prisma.user.create({
     data: {
@@ -203,7 +203,7 @@ npx ts-node scripts/create-test-admin.ts
 
 Login:
 - Email: admin@modual.com
-- Password: Admin123456
+- Password: M@nag3r#2026$ecure!
 
 ---
 

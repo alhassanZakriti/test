@@ -18,7 +18,7 @@ async function main() {
   }
 
   // Hash password
-  const hashedPassword = await bcrypt.hash('Admin123!', 10);
+  const hashedPassword = await bcrypt.hash('M0du@l#2026$ecure!', 10);
 
   // Create admin user
   const admin = await prisma.user.create({
@@ -34,7 +34,7 @@ async function main() {
   console.log('✅ Admin user created successfully!');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📧 Email: admin@modual.nl');
-  console.log('🔒 Password: Admin123!');
+  console.log('🔒 Password: M0du@l#2026$ecure!');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('⚠️  Change the password after first login!');
 }

@@ -78,7 +78,7 @@ Beautiful visual representations of project statistics on the admin dashboard.
 ```
 URL: http://localhost:3000/admin
 Login: admin@modual.nl
-Password: Admin123!
+Password: M0du@l#2026$ecure!
 ```
 
 ### Admin Dashboard Features:
@@ -202,7 +202,7 @@ segmentLength = (percentage / 100) * circumference
 
 ### Test Admin Dashboard:
 ```
-1. Login as admin (admin@modual.nl / Admin123!)
+1. Login as admin (admin@modual.nl / M0du@l#2026$ecure!)
 2. View main dashboard at /admin
 3. Check all 4 stat cards
 4. Verify bar chart displays correctly
