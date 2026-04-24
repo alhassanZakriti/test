@@ -46,16 +46,16 @@ export default function Footer() {
 
           <div className='flex flex-col'>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('footer.contact')}</h3>
-            <a href="mailto:info@modual.ma" className="text-sm text-gray-600 dark:text-gray-400">
-              Email: info@modual.ma
+            <a href="mailto:info@modual.biz" className="text-sm text-gray-600 dark:text-gray-400">
+              Email: info@modual.biz
             </a>
             <Link 
-              href="https://wa.me/212637655794" 
+              href="https://wa.me/212607654550" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-600 dark:text-gray-400"
             >
-              Phone: +212 637-655794
+              Phone: +212 607-654550
             </Link>
           </div>
         </div>
