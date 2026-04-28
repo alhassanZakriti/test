@@ -163,7 +163,7 @@ export default function PricingPage() {
                   </p>
                   <div className="flex items-end justify-center gap-2">
                     <span className="text-5xl font-bold gradient-text">
-                      {plan.price}
+                      {plan.price} 
                     </span>
                     {plan.period && (
                       <span className="text-gray-600 dark:text-gray-400 mb-2">

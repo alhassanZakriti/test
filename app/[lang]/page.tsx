@@ -200,6 +200,9 @@ export default function Home() {
                 <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('pricing.basicPlan')}</h3>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-4xl font-bold gradient-text mx-auto">{t('pricing.basicPrice')}</span>
+                  <span className="text-gray-600 dark:text-gray-400 mb-2">
+                    {t('pricing.perMonth')}
+                  </span>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('pricing.basicDescription')}</p>
                 <Link
