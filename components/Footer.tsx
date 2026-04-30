@@ -50,12 +50,12 @@ export default function Footer() {
               Email: info@modual.biz
             </a>
             <Link 
-              href="https://wa.me/212607654550" 
+              href="https://wa.me/212637655794" 
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-gray-600 dark:text-gray-400"
             >
-              Phone: +212 607-654550
+              Phone: +212 637-655794
             </Link>
           </div>
         </div>
