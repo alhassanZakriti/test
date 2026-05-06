@@ -49,14 +49,17 @@ export async function GET(req: NextRequest) {
 
     const subscription = user.currentSubscription;
 
-    // If no subscription, user needs to pay
+    // No initial payment required - users get free dashboard access
+    // Payment is only required per project when approved by admin
     if (!subscription) {
       return NextResponse.json({
-        needsPayment: true,
-        status: 'No Subscription',
-        daysRemaining: 0,
+        needsPayment: false,
+        status: 'Free Access',
+        daysRemaining: 999999,
         expirationDate: null,
-        lastPayment: null
+        paymentAlias: null,
+        lastPayment: null,
+        message: 'Free dashboard access - payment required per project only'
       });
     }
 
