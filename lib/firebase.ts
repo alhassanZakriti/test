@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, Auth } from 'firebase/aut
 import { getAnalytics, Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCWha1sbZ1-zbTalGBQXWCvPOtQBmF1Fr8",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "modual-web-app.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "modual-web-app",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "modual-web-app.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "606603016078",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:606603016078:web:89412f34209425b14e96df",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-30T415NF98"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyBNhWYERvbvLrzDeO1Jl5hJgWYphl8C89w",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "modual-biz.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "modual-biz",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "modual-biz.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "356542401357",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:356542401357:web:8913b30df6bdeab6ad8504",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-908WZJHW65"
 };
 
 // Initialize Firebase
